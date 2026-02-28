@@ -158,7 +158,7 @@
             <!-- NAVBAR -->
             <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="index.php"><img style="height:65px!important" src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+                    <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
                     <ul class="nav navbar-nav visible-xs-block">
                         <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
                     </ul>
@@ -351,26 +351,18 @@
                                                 name="date_from"
                                                 value="<?= $date_from ?>"
                                                 class="form-control">
-
                                             <label style="margin:0;">To:</label>
-
                                             <input type="date"
                                                 name="date_to"
                                                 value="<?= $date_to ?>"
                                                 class="form-control">
-
                                             <button type="submit"
                                                 class="btn btn-primary">
-
                                                 Filter
-
                                             </button>
-
                                             <a href="transaction_history.php"
                                                 class="btn btn-default">
-
                                                 Clear Filter
-
                                             </a>
 
                                         </form>
@@ -405,8 +397,8 @@
                                                     <li><a href="#capital" data-toggle="tab">Capital Share</a></li>
                                                     <li><a href="#savings" data-toggle="tab">Savings</a></li>
                                                     <li><a href="#loan" data-toggle="tab">Loans</a></li>
-                                                    <li><a href="#cash" data-toggle="tab">Cash Purchases</a></li>
-                                                    <li><a href="#charge" data-toggle="tab">Charge Sales</a></li>
+                                                    <li><a href="#cash" data-toggle="tab">Product Purchases (Cash)</a></li>
+                                                    <li><a href="#charge" data-toggle="tab">Product Purchases (Charge)</a></li>
                                                 <?php endif; ?>
                                                 <?php if ($member_type == 'associate'): ?>
                                                     <li class="active"><a href="#info" data-toggle="tab">Information</a></li>
@@ -505,11 +497,11 @@
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td>Total Cash Purchases (<?= $year; ?>)</td>
+                                                                        <td>Total Product Purchases (Cash) (<?= $year; ?>)</td>
                                                                         <td>₱<?= number_format($total_cash, 2); ?></td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td>Total Paid (Charge Sales <?= $year; ?>)</td>
+                                                                        <td>Total Paid (Charge <?= $year; ?>)</td>
                                                                         <td>₱<?= number_format($total_charge_paid, 2); ?></td>
                                                                     </tr>
                                                                 <?php endif; ?>
@@ -627,7 +619,7 @@
                                                         </div>
                                                         <div class="panel-body">
                                                             <table class="table table-bordered table-hover">
-                                                                thead>
+                                                                </thead>
                                                                 <tr style="background:#eee">
 
                                                                     <th>Reference</th>
@@ -637,7 +629,7 @@
                                                                     <th class="text-right">Balance</th>
 
                                                                 </tr>
-                                                                </thead>
+                                                                </?thead>
                                                                 <tbody>
                                                                     <?php
                                                                     $balance = 0;
@@ -657,7 +649,8 @@
                                                                             ON tt.transaction_type_id = t.transaction_type_id
                                                                         WHERE a.member_id = $member_id
                                                                         AND at.type_name = 'savings'
-                                                                        AND YEAR(t.transaction_date) = $year
+                                                                              AND DATE(t.transaction_date)
+                                                                               BETWEEN '$date_from' AND '$date_to'
                                                                         ORDER BY t.transaction_date DESC, t.transaction_id DESC
                                                                     ");
                                                                     if ($savings_result->num_rows > 0) {
@@ -721,7 +714,7 @@
                                                     </div>
                                                 </div>
 
-                                                < <div class="tab-pane" id="loan">
+                                                <div class="tab-pane" id="loan">
                                                     <div class="panel panel-white border-top-xlg border-top-teal-400">
                                                         <div class="panel-heading">
                                                             <h6 class="panel-title">
@@ -746,15 +739,14 @@
                                                                 <tbody>
                                                                     <?php
 
-                                                                    // Fetch loans INCLUDING total_due
                                                                     $loan_result = $db->query("
                                                                      SELECT l.loan_id, l.total_due, l.status, lt.loan_type_name
-FROM loans l
-JOIN loan_types lt ON l.loan_type_id = lt.loan_type_id
-JOIN accounts a ON l.account_id = a.account_id
-WHERE a.member_id = $member_id
-ORDER BY l.loan_id DESC
-");
+                                                                    FROM loans l
+                                                                    JOIN loan_types lt ON l.loan_type_id = lt.loan_type_id
+                                                                    JOIN accounts a ON l.account_id = a.account_id
+                                                                    WHERE a.member_id = $member_id
+                                                                    ORDER BY l.loan_id DESC
+                                                                     ");
 
                                                                     if ($loan_result->num_rows > 0) {
 
@@ -763,24 +755,15 @@ ORDER BY l.loan_id DESC
                                                                             $loan_id = $loan['loan_id'];
                                                                             $loan_type_name = htmlspecialchars($loan['loan_type_name']);
                                                                             $loan_status = ucfirst($loan['status']);
-
-                                                                            // START balance from TOTAL LOAN DUE (correct)
                                                                             $balance = floatval($loan['total_due']);
-
-
-                                                                            // Fetch payments
                                                                             $payments = $db->query("
-        SELECT *
-        FROM loan_payments
-        WHERE loan_id = $loan_id
-        ORDER BY payment_date ASC, payment_id ASC
-        ");
-
-
+                                                                               SELECT *
+                                                                               FROM loan_payments
+                                                                               WHERE loan_id = $loan_id
+                                                                               ORDER BY payment_date ASC, payment_id ASC
+                                                                               ");
                                                                             if ($payments->num_rows > 0) {
-
                                                                                 while ($p = $payments->fetch_assoc()) {
-
                                                                                     $reference = htmlspecialchars($p['reference_no']);
 
                                                                                     $date_paid = date('M d, Y', strtotime($p['payment_date']));
@@ -790,165 +773,145 @@ ORDER BY l.loan_id DESC
                                                                                     $penalty_paid = floatval($p['penalty_paid']);
 
                                                                                     $total_paid = floatval($p['amount_paid']);
-
-
-                                                                                    // SUBTRACT payment from TOTAL DUE
                                                                                     $balance -= $total_paid;
-
-
                                                                                     echo "<tr>
-
-                <td>
-                <a href='javascript:void(0);'
-                onclick='view_loanpayments_receipt(this)'
-                data-reference='{$reference}'
-                style='font-weight:600; color:#26a69a;'>
-                {$reference}
-                </a>
-                </td>
-
-                <td>{$loan_type_name}</td>
-
-                <td>{$date_paid}</td>
-
-                <td class='text-right'>₱" . number_format($principal_paid, 2) . "</td>
-
-                <td class='text-right'>₱" . number_format($interest_paid, 2) . "</td>
-
-                <td class='text-right'>₱" . number_format($penalty_paid, 2) . "</td>
-
-                <td class='text-right'>₱" . number_format($total_paid, 2) . "</td>
-
-                <td class='text-right'><b>₱" . number_format($balance, 2) . "</b></td>
-
-                <td>{$loan_status}</td>
-
-                </tr>";
+                                                                                       <td>
+                                                                                      <a href='javascript:void(0);'
+                                                                                         onclick='view_loanpayments_receipt(this)'
+                                                                                         data-reference='{$reference}'
+                                                                                          style='font-weight:600; color:#26a69a;'>
+                                                                                        {$reference}
+                                                                                          </a>
+                                                                                          </td>
+                                                                                          <td>{$loan_type_name}</td> 
+                                                                                         <td>{$date_paid}</td>
+                                                                                         <td class='text-right'>₱" . number_format($principal_paid, 2) . "</td>
+                                                                                         <td class='text-right'>₱" . number_format($interest_paid, 2) . "</td>
+                                                                                         <td class='text-right'>₱" . number_format($penalty_paid, 2) . "</td>
+                                                                                         <td class='text-right'>₱" . number_format($total_paid, 2) . "</td>
+                                                                                         <td class='text-right'><b>₱" . number_format($balance, 2) . "</b></td>
+                                                                                            <td>{$loan_status}</td>
+                                                                                            </tr>";
                                                                                 }
                                                                             } else {
-
                                                                                 echo "
-            <tr>
-            <td colspan='9' class='text-center'>
-            No payments made yet
-            </td>
-            </tr>
-            ";
+                                                                                   <tr>
+                                                                                <td colspan='9' class='text-center'>
+                                                                                  No payments made yet
+                                                                                  </td>
+                                                                                     </tr>
+                                                                                       ";
                                                                             }
                                                                         }
                                                                     } else {
-
                                                                         echo "
-<tr>
-<td colspan='9' class='text-center'>
-No loans found
-</td>
-</tr>
-";
+                                                                            <tr>
+                                                                           <td colspan='9' class='text-center'>
+                                                                            No loans found
+                                                                           </td>
+                                                                              </tr>";
                                                                     }
-
                                                                     ?>
-
                                                                 </tbody>
                                                             </table>
                                                         </div>
                                                     </div>
-                                            </div>
+                                                </div>
 
-                                            <div class="tab-pane" id="cash">
-                                                <div class="panel panel-white border-top-xlg border-top-teal-400">
-                                                    <div class="panel-heading">
-                                                        <h6 class="panel-title"><i class="icon-cart position-left text-teal-400"></i> Cash Sales Summary (<?= $year; ?>)</h6>
-                                                    </div>
-                                                    <div class="panel-body">
-                                                        <table class="table table-bordered table-hover">
-                                                            <thead>
-                                                                <tr style="background:#eee">
-                                                                    <th>Sales No</th>
-                                                                    <th class="text-center">Total Quantity</th>
-                                                                    <th class="text-right">Total Amount</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php
-                                                                $hasCash = false;
-                                                                $total_cash_sum = 0;
-
-                                                                while ($row = $cash_sales->fetch_assoc()) {
-                                                                    $hasCash = true;
-
-                                                                    $qty = isset($row['total_quantity']) ? (int)$row['total_quantity'] : 0;
-                                                                    $amount = isset($row['total_amount']) ? $row['total_amount'] : 0;
-
-                                                                    $total_cash_sum += $amount;
-                                                                ?>
-                                                                    <tr>
-                                                                        <td>
-                                                                            <a href="javascript:;"
-                                                                                onclick="view_details(this)"
-                                                                                sales-id="<?= $row['sales_no']; ?>"
-                                                                                sales-no="<?= $row['sales_no']; ?>">
-                                                                                <?= htmlspecialchars($row['sales_no']); ?>
-                                                                            </a>
-                                                                        </td>
-                                                                        <td class="text-center"><?= $qty; ?></td>
-                                                                        <td class="text-right">₱<?= number_format($amount, 2); ?></td>
+                                                <div class="tab-pane" id="cash">
+                                                    <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                                        <div class="panel-heading">
+                                                            <h6 class="panel-title"><i class="icon-cart position-left text-teal-400"></i> Cash Sales Summary (<?= $year; ?>)</h6>
+                                                        </div>
+                                                        <div class="panel-body">
+                                                            <table class="table table-bordered table-hover">
+                                                                <thead>
+                                                                    <tr style="background:#eee">
+                                                                        <th>Sales No</th>
+                                                                        <th class="text-center">Total Quantity</th>
+                                                                        <th class="text-right">Total Amount</th>
                                                                     </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php
+                                                                    $hasCash = false;
+                                                                    $total_cash_sum = 0;
+
+                                                                    while ($row = $cash_sales->fetch_assoc()) {
+                                                                        $hasCash = true;
+
+                                                                        $qty = isset($row['total_quantity']) ? (int)$row['total_quantity'] : 0;
+                                                                        $amount = isset($row['total_amount']) ? $row['total_amount'] : 0;
+
+                                                                        $total_cash_sum += $amount;
+                                                                    ?>
+                                                                        <tr>
+                                                                            <td>
+                                                                                <a href="javascript:;"
+                                                                                    onclick="view_details(this)"
+                                                                                    sales-id="<?= $row['sales_no']; ?>"
+                                                                                    sales-no="<?= $row['sales_no']; ?>">
+                                                                                    <?= htmlspecialchars($row['sales_no']); ?>
+                                                                                </a>
+                                                                            </td>
+                                                                            <td class="text-center"><?= $qty; ?></td>
+                                                                            <td class="text-right">₱<?= number_format($amount, 2); ?></td>
+                                                                        </tr>
+                                                                    <?php } ?>
+
+                                                                    <?php if (!$hasCash) { ?>
+                                                                        <tr>
+                                                                            <td colspan="3">No cash sales found for <?= $year; ?>.</td>
+                                                                        </tr>
+                                                                    <?php } ?>
+                                                                </tbody>
+
+                                                                <?php if ($hasCash) { ?>
+
+                                                                    <tfoot>
+                                                                        <tr>
+                                                                            <th colspan="2" class="text-right">Total:</th>
+                                                                            <th class="text-right">₱<?= number_format($total_cash_sum, 2); ?></th>
+                                                                        </tr>
+                                                                    </tfoot>
                                                                 <?php } ?>
+                                                            </table>
 
-                                                                <?php if (!$hasCash) { ?>
-                                                                    <tr>
-                                                                        <td colspan="3">No cash sales found for <?= $year; ?>.</td>
-                                                                    </tr>
-                                                                <?php } ?>
-                                                            </tbody>
-
-                                                            <?php if ($hasCash) { ?>
-
-                                                                <tfoot>
-                                                                    <tr>
-                                                                        <th colspan="2" class="text-right">Total:</th>
-                                                                        <th class="text-right">₱<?= number_format($total_cash_sum, 2); ?></th>
-                                                                    </tr>
-                                                                </tfoot>
-                                                            <?php } ?>
-                                                        </table>
-
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
 
-                                            <div class="tab-pane" id="charge">
-                                                <div class="panel panel-white border-top-xlg border-top-teal-400">
-                                                    <div class="panel-heading">
-                                                        <h6 class="panel-title"><i class="icon-credit-card position-left text-teal-400"></i> Charge (<?= $year; ?>)</h6>
-                                                    </div>
-                                                    <div class="panel-body">
-                                                        <table class="table table-bordered table-hover">
-                                                            <thead>
-                                                                <tr style="background:#eee">
-                                                                    <th>Sales No</th>
-                                                                    <th class="text-center">Total Quantity</th>
-                                                                    <th class="text-right">Total Amount</th>
-                                                                    <th class="text-right">Paid</th>
-                                                                    <th class="text-right">Balance</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php
-                                                                $hasCharge = false;
-                                                                $total_amt = $paid_amt = $bal_amt = 0;
+                                                <div class="tab-pane" id="charge">
+                                                    <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                                        <div class="panel-heading">
+                                                            <h6 class="panel-title"><i class="icon-credit-card position-left text-teal-400"></i> Charge (<?= $year; ?>)</h6>
+                                                        </div>
+                                                        <div class="panel-body">
+                                                            <table class="table table-bordered table-hover">
+                                                                <thead>
+                                                                    <tr style="background:#eee">
+                                                                        <th>Sales No</th>
+                                                                        <th class="text-center">Total Quantity</th>
+                                                                        <th class="text-right">Total Amount</th>
+                                                                        <th class="text-right">Paid</th>
+                                                                        <th class="text-right">Balance</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php
+                                                                    $hasCharge = false;
+                                                                    $total_amt = $paid_amt = $bal_amt = 0;
 
-                                                                while ($row = $charge_sales->fetch_assoc()) {
-                                                                    $hasCharge = true;
+                                                                    while ($row = $charge_sales->fetch_assoc()) {
+                                                                        $hasCharge = true;
 
-                                                                    $paid = $row['total_amount'] - $row['balance'];
-                                                                    $total_amt += $row['total_amount'];
-                                                                    $paid_amt += $paid;
-                                                                    $bal_amt += $row['balance'];
+                                                                        $paid = $row['total_amount'] - $row['balance'];
+                                                                        $total_amt += $row['total_amount'];
+                                                                        $paid_amt += $paid;
+                                                                        $bal_amt += $row['balance'];
 
-                                                                    echo "<tr>
+                                                                        echo "<tr>
                                                                     <td>
                                                                     <a href='javascript:;'
                                                                         onclick='view_details(this)'
@@ -964,57 +927,57 @@ No loans found
                                                                         <td class='text-right'>₱" . number_format($paid, 2) . "</td>
                                                                         <td class='text-right'>₱" . number_format($row['balance'], 2) . "</td>
                                                                         </tr>";
-                                                                }
+                                                                    }
 
-                                                                if (!$hasCharge) {
-                                                                    echo "<tr><td colspan='5'>No charge sales found for $year.</td></tr>";
-                                                                }
-                                                                ?>
+                                                                    if (!$hasCharge) {
+                                                                        echo "<tr><td colspan='5'>No charge sales found for $year.</td></tr>";
+                                                                    }
+                                                                    ?>
 
-                                                                <?php if ($hasCharge) { ?>
-                                                            <tfoot>
-                                                                <tr style="font-weight:bold;">
-                                                                    <th colspan="2" class="text-right">Totals:</th>
-                                                                    <th class="text-right">₱<?= number_format($total_amt, 2); ?></th>
-                                                                    <th class="text-right">₱<?= number_format($paid_amt, 2); ?></th>
-                                                                    <th class="text-right">₱<?= number_format($bal_amt, 2); ?></th>
-                                                                </tr>
-                                                            </tfoot>
-                                                        <?php } ?>
-                                                        </table>
+                                                                    <?php if ($hasCharge) { ?>
+                                                                <tfoot>
+                                                                    <tr style="font-weight:bold;">
+                                                                        <th colspan="2" class="text-right">Totals:</th>
+                                                                        <th class="text-right">₱<?= number_format($total_amt, 2); ?></th>
+                                                                        <th class="text-right">₱<?= number_format($paid_amt, 2); ?></th>
+                                                                        <th class="text-right">₱<?= number_format($bal_amt, 2); ?></th>
+                                                                    </tr>
+                                                                </tfoot>
+                                                            <?php } ?>
+                                                            </table>
 
+                                                        </div>
                                                     </div>
                                                 </div>
+
+
+
+
                                             </div>
-
-
-
-
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <?php require('../admin/includes/footer-text.php'); ?>
+                            <?php require('../admin/includes/footer-text.php'); ?>
 
-                    </div>
-                </div>
-            </div>
-
-            <div id="modal-all" class="modal fade" data-backdrop="static" data-keyboard="false">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="title-all"></h5>
-                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="show-data-all"></div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <div id="modal-all" class="modal fade" data-backdrop="static" data-keyboard="false">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="title-all"></h5>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="show-data-all"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             </div>
 
@@ -1045,6 +1008,8 @@ No loans found
             <?php require('../admin/includes/footer.php'); ?>
             <script src="../js/html2canvas.min.js"></script>
             <script src="../js/jspdf.umd.min.js"></script>
+
+            <script src="../assets/js/plugins/tables/datatables/datatables.min.js"></script>
 
             <script>
                 document.getElementById('btn-download-pdf').addEventListener('click', async function() {

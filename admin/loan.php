@@ -71,7 +71,6 @@
     ORDER BY l.released_date DESC
 ");
 
-        // Fetch members with a loan account
         $members = $db->query("
     SELECT a.account_id, m.member_id, CONCAT(m.first_name,' ',m.last_name) AS member_name
     FROM accounts a
@@ -79,7 +78,7 @@
     WHERE a.account_type_id = 3 AND m.status='active'
 ");
 
-        // Fetch active loan types
+
         $loan_types = $db->query("
     SELECT * FROM loan_types WHERE status='active'
 ");
@@ -107,6 +106,24 @@
             .navbar-brand span {
                 white-space: nowrap;
             }
+
+            /* Pop effect for breadcrumb links */
+            .breadcrumb-elements a {
+                display: inline-block;
+                /* needed for transform */
+                transition: all 0.2s ease;
+            }
+
+            .breadcrumb-elements a:hover {
+                transform: scale(1.05);
+                /* slightly bigger */
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+                /* subtle shadow */
+                border-radius: 5px;
+                /* optional: rounded edges for nicer look */
+                background-color: rgba(0, 128, 128, 0.1);
+                /* subtle background change */
+            }
         </style>
 
         <body class="layout-boxed navbar-top">
@@ -114,7 +131,7 @@
             <!-- Main navbar -->
             <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="index.php"><img style="height: 65px!important" src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+                    <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
                     <ul class="nav navbar-nav visible-xs-block">
                         <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
                     </ul>
@@ -176,7 +193,7 @@
                                                     <td style="text-align:right"><?= number_format($row['requested_amount'], 2); ?></td>
                                                     <td><?= (int)$row['term_value'] ?> <?= htmlspecialchars($row['term_unit']); ?></td>
                                                     <td><?= htmlspecialchars($row['payment_frequency']); ?></td>
-                                                    <td><span class="label label-warning"><?= ucfirst($row['status']); ?></span></td>
+                                                    <td align="center"><span class="label label-warning"><?= ucfirst($row['status']); ?></span></td>
                                                     <td><?= htmlspecialchars($row['application_date']); ?></td>
                                                 </tr>
                                             <?php } ?>
@@ -212,9 +229,9 @@
                                                     <td style="text-align:right"><?= number_format($row['approved_amount'], 2); ?></td>
                                                     <td><?= (int)$row['term_value'] ?> <?= htmlspecialchars($row['term_unit']); ?></td>
                                                     <td><?= htmlspecialchars($row['payment_frequency']); ?></td>
-                                                    <td><span class="label label-success"><?= ucfirst($row['status']); ?></span></td>
+                                                    <td align="center"><span class="label label-success"><?= ucfirst($row['status']); ?></span></td>
                                                     <td><?= htmlspecialchars($row['approved_date']); ?></td>
-                                                    <td>
+                                                    <td align="center">
                                                         <button class="btn btn-sm btn-success"
                                                             onclick='openDisburseModal(<?= json_encode([
                                                                                             "loan_id" => $row["loan_id"],
@@ -226,6 +243,16 @@
                                                                                             "payment_frequency" => $row["payment_frequency"]
                                                                                         ]); ?>)'>
                                                             <i class="icon-wallet"></i> Disburse
+                                                        </button>
+
+                                                        <button class="btn btn-sm btn-danger"
+                                                            onclick='openCancelModal(<?= json_encode([
+                                                                                            "loan_id" => $row["loan_id"],
+                                                                                            "member_name" => $row["member_name"],
+                                                                                            "loan_type_name" => $row["loan_type_name"],
+                                                                                            "approved_amount" => $row["approved_amount"]
+                                                                                        ]); ?>)'>
+                                                            <i class="icon-cross2"></i> Cancel
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -403,6 +430,13 @@
                                 </button>
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                             </div>
+
+                            <div class="alert alert-info disburse-warning">
+                                <i class="icon-info22"></i>
+                                This will officially release the loan amount to the member.
+                                Please confirm all details before proceeding.
+                            </div>
+
                         </form>
                     </div>
                 </div>
@@ -427,6 +461,61 @@
                 </div>
             </div>
 
+
+            <div id="modal-cancel" class="modal fade" data-backdrop="static" data-keyboard="false">
+                <div class="modal-dialog modal-md">
+                    <div class="modal-content cancel-modal">
+
+                        <form id="form-cancel" class="form-horizontal">
+
+                            <!-- Header -->
+                            <div class="modal-header bg-danger text-white">
+                                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title">
+                                    <i class="icon-warning"></i> Confirm Loan Cancellation
+                                </h4>
+                            </div>
+
+                            <!-- Body -->
+                            <div class="modal-bodys">
+
+                                <input type="hidden" name="cancelledloan" value="1">
+                                <input type="hidden" name="loan_id" id="cancel-loan-id">
+                                <!-- Loan Info Card -->
+                                <div class="cancel-info-box">
+                                    <p><strong>Member:</strong><br>
+                                        <span id="cancel-member" class="info-value"></span>
+                                    </p>
+                                    <p><strong>Loan Type:</strong><br>
+                                        <span id="cancel-type" class="info-value"></span>
+                                    </p>
+                                    <p><strong>Approved Amount:</strong><br>
+                                        ₱ <span id="cancel-amount" class="info-value text-danger"></span>
+                                    </p>
+                                </div>
+                                <!-- Warning Box -->
+                                <div class="alert alert-warning cancel-warning">
+                                    <i class="icon-info22"></i>
+                                    The approved amount will be returned to the selected loan fund.
+                                    <br>
+                                    This action cannot be undone.
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                                <button type="submit" class="btn btn-danger btn-confirm">
+                                    <i class="icon-cross2"></i> Confirm Cancellation
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <?php require('includes/footer-text.php'); ?>
             <?php require('includes/footer.php'); ?>
             <script src="../js/select2.min.js"></script>
             <script src="../js/validator.min.js"></script>
@@ -435,7 +524,7 @@
             <script type="text/javascript">
                 $(document).ready(function() {
 
-                    // Initialize Select2 when modal is shown
+
                     $('#modal-new').on('shown.bs.modal', function() {
                         $('.select-member-search').select2({
                             dropdownParent: $('#modal-new'),
@@ -443,19 +532,19 @@
                         });
                     });
 
-                    // Initialize DataTables for all tables
+
                     $('.datatable-button-html5-basic').DataTable({
-                        "pageLength": 5, // Default rows per page
-                        "lengthMenu": [5, 10, 25, 50, 100], // Options for rows per page
-                        "order": [], // Disable initial order (optional)
+                        "pageLength": 5,
+                        "lengthMenu": [5, 10, 25, 50, 100],
+                        "order": [],
                         "autoWidth": false,
-                        "responsive": true, // Makes table responsive
+                        "responsive": true,
                         "language": {
-                            "search": "Filter records:" // Custom placeholder for search box
+                            "search": "Filter records:"
                         }
                     });
 
-                    // Load accounts dynamically when member is selected
+
                     $('#member_id').change(function() {
                         var member_id = $(this).val();
                         if (member_id) {
@@ -563,6 +652,45 @@
                                     header: 'Error',
                                     theme: 'bg-danger'
                                 });
+                            }
+                        });
+                    });
+
+                    // Open Cancel Modal
+                    window.openCancelModal = function(loan) {
+                        $('#cancel-loan-id').val(loan.loan_id);
+                        $('#cancel-member').text(loan.member_name);
+                        $('#cancel-type').text(loan.loan_type_name);
+                        $('#cancel-amount').text(parseFloat(loan.approved_amount).toFixed(2));
+                        $('#modal-cancel').modal('show');
+                    };
+
+                    // Submit Cancel
+                    $('#form-cancel').submit(function(e) {
+                        e.preventDefault();
+                        var formData = $(this).serialize();
+
+                        $.ajax({
+                            url: '../transaction.php',
+                            type: 'POST',
+                            data: formData,
+                            success: function(resp) {
+                                resp = resp.trim();
+                                if (resp === "1") {
+                                    $.jGrowl('Loan cancelled successfully!', {
+                                        header: 'Success',
+                                        theme: 'bg-success'
+                                    });
+                                    $('#modal-cancel').modal('hide');
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 800);
+                                } else {
+                                    $.jGrowl('Error: ' + resp, {
+                                        header: 'Error',
+                                        theme: 'bg-danger'
+                                    });
+                                }
                             }
                         });
                     });

@@ -10,9 +10,9 @@ $code = $_GET['code'];
 
 // Fetch product info from SQLite3
 $stmt = $db->prepare("SELECT * FROM tbl_products WHERE product_code = :code");
-$stmt->bindValue(':code', $code, SQLITE3_TEXT);
+$stmt->bind_param(':code', $code, );
 $result = $stmt->execute();
-$product = $result->fetchArray(SQLITE3_ASSOC);
+$product = $result->fetch_assoc();
 
 if ($product) {
     echo "<h2>Product Details</h2>";

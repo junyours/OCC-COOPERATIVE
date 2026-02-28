@@ -56,7 +56,7 @@
                                     <?php 
                                         $query = "SELECT * FROM tbl_category";
                                         $result = $db->query($query);
-                                        while($row = $result->fetchArray()) {
+                                        while($row = $result->fetch_assoc()) {
 
                                     ?>
                                     <tr>

@@ -32,6 +32,46 @@ $result_unit = $db->query($unit);
     .navbar-brand span {
         white-space: nowrap;
     }
+
+    /* Pop effect for breadcrumb links */
+    .breadcrumb-elements a {
+        display: inline-block;
+        /* needed for transform */
+        transition: all 0.2s ease;
+    }
+
+    .breadcrumb-elements a:hover {
+        transform: scale(1.05);
+        /* slightly bigger */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        /* subtle shadow */
+        border-radius: 5px;
+        /* optional: rounded edges for nicer look */
+        background-color: rgba(0, 128, 128, 0.1);
+        /* subtle background change */
+    }
+
+    #table-product tbody tr {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #table-product tbody tr:hover {
+        transform: scale(1.02);
+        /* slightly bigger */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        /* subtle shadow pop */
+    }
+
+    #table-product tbody tr img {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #table-product tbody tr img:hover {
+        transform: scale(1.1);
+        /* image pop effect */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
 </style>
 
 <body class="layout-boxed navbar-top">
@@ -39,7 +79,7 @@ $result_unit = $db->query($unit);
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height:65px!important" src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>

@@ -17,14 +17,15 @@ if ($loanQry->num_rows == 0) {
 }
 
 $loan_id = $loanQry->fetch_assoc()['loan_id'];
-// ======================================================
-// GET LOAN DETAILS
-// ======================================================
+
 $loanQry = $db->query("
 SELECT 
 l.loan_id,
 l.approved_amount,
 l.interest_rate,
+l.insurance,
+l.service_charge,
+l.doc_stamp_fee,
 l.term_value,
 l.term_unit,
 l.total_interest,
@@ -47,9 +48,6 @@ if ($loanQry->num_rows == 0) {
 
 $loan = $loanQry->fetch_assoc();
 
-// ======================================================
-// GET PROCESSING FEE SETTINGS
-// ======================================================
 $fee_type = 'percent';
 $fee_value = 0;
 
@@ -66,15 +64,10 @@ while ($row = $feeQry->fetch_assoc()) {
 
 $processing_fee = ($fee_type == "percent") ? $loan['approved_amount'] * ($fee_value / 100) : $fee_value;
 
-// ======================================================
-// COMPUTE MONTHLY PAYMENT
-// ======================================================
+
 $term = $loan['term_value'];
 $monthly_payment = $loan['total_due'] / $term;
 
-// ======================================================
-// GET PAYMENT SCHEDULE
-// ======================================================
 $scheduleQry = $db->query("
 SELECT due_date, total_due
 FROM loan_schedule
@@ -92,9 +85,7 @@ while ($row = $scheduleQry->fetch_assoc()) {
     ];
 }
 
-// ======================================================
-// GET MEMBER PAYMENTS
-// ======================================================
+
 $payments_result = $db->query("
 SELECT reference_no, payment_date, principal_paid, interest_paid, penalty_paid, amount_paid
 FROM loan_payments
@@ -130,12 +121,13 @@ while ($p = $payments_result->fetch_assoc()) {
     ];
 }
 
-// ======================================================
-// VARIABLES
-// ======================================================
+
 $loan_number = "LN-" . str_pad($loan_id, 6, '0', STR_PAD_LEFT);
 $approval_date = date("M d, Y", strtotime($loan['approved_date']));
 $member_name = $loan['first_name'] . " " . $loan['last_name'];
+$insurance = $loan['insurance'];
+$processing_fee = $loan['service_charge'];
+$doc_stampp_fee = $loan['doc_stamp_fee'];
 $principal = $loan['approved_amount'];
 $interest_rate = $loan['interest_rate'];
 $total_interest = $loan['total_interest'];
@@ -169,6 +161,8 @@ $address = $loan['address'];
                 <th>Term</th>
                 <th>Interest Rate</th>
                 <th>Processing Fee</th>
+                <th>Insurance</th>
+                <th>Doc Stampp</th>
                 <th>Total Interest</th>
                 <th>Total Payable</th>
                 <th>Status</th>
@@ -181,6 +175,8 @@ $address = $loan['address'];
                 <td align="center"><?= $term . " " . $loan['term_unit'] ?></td>
                 <td align="center"><?= $interest_rate ?>%</td>
                 <td align="right"><?= number_format($processing_fee, 2) ?></td>
+                <td align="right"><?= number_format($insurance, 2) ?></td>
+                <td align="right"><?= number_format($doc_stampp_fee, 2) ?></td>
                 <td align="right"><?= number_format($total_interest, 2) ?></td>
                 <td align="right"><b><?= number_format($total_payable, 2) ?></b></td>
                 <td align="center"><?= ucfirst($loan['status']) ?></td>

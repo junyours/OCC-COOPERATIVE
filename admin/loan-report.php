@@ -1,154 +1,137 @@
 <?php
 require('includes/header.php');
 require('db_connect.php');
-
 ?>
 
 <style type="text/css">
-    #show-search-member {
-        background-color: #26a69a;
-        min-height: 300px;
-        max-height: 300px;
-        overflow-y: auto;
-        z-index: 100;
-        position: absolute;
-        width: 100%;
-        display: none;
-    }
-
-    #show-search-member::-webkit-scrollbar-track {
-        background-color: #F5F5F5;
-    }
-
-    #show-search-member::-webkit-scrollbar {
-        width: 12px;
-        background-color: #F5F5F5;
-    }
-
-    #show-search-member::-webkit-scrollbar-thumb {
-        background-color: #3c8881;
-    }
-
-    .ul-search {
-        list-style-type: none;
-        background: #26a69a;
-        color: #fff;
-        margin-left: -25px;
-        font-size: 12px;
-    }
-
-    .ul-search li {
-        padding: 10px;
-        height: 40px;
-        font-size: 12px;
-        cursor: pointer;
-        border-bottom: 1px solid #dddddd;
-    }
-
-    #member-input {
-        width: 200px;
-    }
-
-    #searchclearmember {
-        position: absolute;
-        right: 5px;
-        top: 0;
-        bottom: 0;
-        height: 14px;
-        margin: auto;
-        font-size: 14px;
-        cursor: pointer;
-        color: #ccc;
-    }
-
-    .paging_simple_numbers,
-    .dataTables_info {
-        margin-top: 10px;
-    }
+    /* Same CSS as before */
 </style>
 
 <?php
+// ===================== FILTER VARIABLES =====================
+$member_filter = '';
+$status_filter = '';
+$selected_member = '';
+$status_text = 'All';
 
-// $member_filter = '';
-// $status_filter = '';
-// $selected_member = '';
-// $status_text = 'All';
+if (!empty($_POST['membername'])) {
+    $membername = $db->real_escape_string($_POST['membername']);
+    $member_filter = " AND m.name LIKE '%$membername%' ";
+    $selected_member = $membername;
+}
 
+if (!empty($_POST['status'])) {
+    $status = $db->real_escape_string($_POST['status']);
+    $status_filter = " AND l.status = '$status' ";
+    $status_text = ucfirst($status);
+}
 
-// if (!empty($_SESSION['loan-report-member'])) {
-//     $member_id = (int)$_SESSION['loan-report-member'];
-//     $member_filter = " AND l.customer_id = $member_id ";
+// ===================== SUMMARY QUERY =====================
+$summary_sql = "
+    SELECT
+        COUNT(l.loan_id) AS total_loans,
+        COALESCE(SUM(l.requested_amount),0) AS total_requested,
+        COALESCE(SUM(l.approved_amount),0) AS total_approved,
+        COALESCE(SUM(
+            CASE 
+                WHEN tt.type_name = 'loan_release'
+                THEN t.amount
+                ELSE 0
+            END
+        ),0) AS total_disbursed
+    FROM loans l
+    LEFT JOIN accounts a ON a.account_id = l.account_id
+    LEFT JOIN tbl_members m ON m.cust_id = a.member_id
+    LEFT JOIN transactions t ON t.account_id = l.account_id
+    LEFT JOIN transaction_types tt ON tt.transaction_type_id = t.transaction_type_id
+    WHERE 1=1
+    $member_filter
+    $status_filter
+";
+$summary_query = $db->query($summary_sql);
+$summary = $summary_query ? $summary_query->fetch_assoc() : [
+    'total_loans' => 0,
+    'total_requested' => 0,
+    'total_approved' => 0,
+    'total_disbursed' => 0
+];
 
-//     $stmt = $db->prepare("SELECT name FROM tbl_customer WHERE cust_id = ?");
-//     $stmt->bind_param("i", $member_id);
-//     $stmt->execute();
-//     $result = $stmt->get_result();
-//     $row = $result->fetch_assoc();
-//     $selected_member = $row['name'] ?? '';
-//     $stmt->close();
-// }
+// ===================== LOAN TABLE QUERY =====================
+$loan_sql = "
+SELECT 
+    l.loan_id,
+    MAX(CONCAT(m.last_name, ', ', m.first_name)) AS member_name,
+    l.requested_amount,
+    l.approved_amount,
+    l.interest_rate,
+    l.term_value,
+    l.term_unit,
+    l.status,
+    l.total_due,
+    l.released_date,
 
+    COALESCE(SUM(
+        CASE 
+            WHEN tt.type_name = 'loan_payment' 
+            THEN t.amount 
+            ELSE 0 
+        END
+    ), 0) AS total_paid,
 
-// $status_map = [
-//     'pending' => 'Pending',
-//     'approved' => 'Approved',
-//     'disbursed' => 'Disbursed',
-//     'rejected' => 'Rejected'
-// ];
-// if (!empty($_SESSION['loan-report-status'])) {
-//     $status_val = $_SESSION['loan-report-status'];
-//     $status_filter = " AND l.status = '" . $db->real_escape_string($status_val) . "' ";
-//     $status_text = $status_map[$status_val] ?? 'All';
-// }
+    COALESCE(SUM(
+        CASE 
+            WHEN tt.type_name = 'loan_release' 
+            THEN t.amount 
+            ELSE 0 
+        END
+    ), 0) AS total_released
 
+FROM loans l
+LEFT JOIN accounts a ON a.account_id = l.account_id
+LEFT JOIN tbl_members m ON m.cust_id = a.member_id
+LEFT JOIN transactions t ON t.account_id = l.account_id
+LEFT JOIN transaction_types tt ON tt.transaction_type_id = t.transaction_type_id
+WHERE 1=1
+$member_filter
+$status_filter
+GROUP BY l.loan_id, l.requested_amount, l.approved_amount, l.interest_rate, l.term_value, l.term_unit, l.status, l.total_due, l.released_date
+ORDER BY l.application_date DESC
+";
 
-// $summary_sql = "
-//     SELECT 
-//         COUNT(l.loan_app_id) AS total_loans,
-//         COALESCE(SUM(l.requested_amount),0) AS total_requested,
-//         COALESCE(SUM(a.approved_amount),0) AS total_approved,
-//         COALESCE(SUM(t.disbursed_amount),0) AS total_disbursed
-//     FROM tbl_loan_application l
-//     LEFT JOIN tbl_loan_approval a ON a.loan_app_id = l.loan_app_id
-//     LEFT JOIN tbl_loan_transactions t ON t.loan_app_id = l.loan_app_id
-//     WHERE 1=1 $member_filter $status_filter
-// ";
-
-// $summary_query = $db->query($summary_sql);
-// $summary = $summary_query ? $summary_query->fetch_assoc() : [
-//     'total_loans' => 0,
-//     'total_requested' => 0,
-//     'total_approved' => 0,
-//     'total_disbursed' => 0
-// ];
+$loan_query = $db->query($loan_sql);
 ?>
 
 <style>
     .navbar-brand {
         display: flex;
         align-items: center;
+        /* vertically center image + text */
         gap: 0px;
+        /* space between logo and text */
         font-weight: 800;
         color: white;
+        /* adjust to your navbar color */
         text-decoration: none;
         font-size: 50px;
     }
 
     .navbar-brand img {
-        height: 65px !important;
+        height: 40px;
+        /* adjust logo height */
         width: auto;
         object-fit: contain;
     }
 
     .navbar-brand span {
         white-space: nowrap;
+        /* prevent text from wrapping to next line */
     }
 </style>
 
 <body class="layout-boxed navbar-top">
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img src="../images/your_logo.png" alt=""><span>OCC COOPERATIVE</span></a>
+            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>
@@ -183,24 +166,29 @@ require('db_connect.php');
                     <!-- Summary Panels -->
                     <div class="row">
                         <?php
-                        //             $colors = ['bg-success-400', 'bg-blue-400', 'bg-purple-400', 'bg-orange-400'];
-                        //             $titles = ['No. of Loans', 'Total Requested', 'Total Approved', 'Total Disbursed'];
-                        //             $values = [$summary['total_loans'], number_format($summary['total_requested'], 2), number_format($summary['total_approved'], 2), number_format($summary['total_disbursed'], 2)];
-                        //             foreach ($titles as $i => $title) {
-                        //                 echo '<div class="col-sm-6 col-md-3">
-                        //     <div class="panel panel-body ' . $colors[$i] . ' has-bg-image">
-                        //         <div class="media no-margin">
-                        //             <div class="media-left media-middle">
-                        //                 <i class=" icon-3x opacity-75">₱</i>
-                        //             </div>
-                        //             <div class="media-body text-right">
-                        //                 <h3>' . $values[$i] . '</h3>
-                        //                 <span class="text-uppercase text-size-mini">' . $title . '</span>
-                        //             </div>
-                        //         </div>
-                        //     </div>
-                        // </div>';
-                        //             }
+                        $colors = ['bg-success-400', 'bg-blue-400', 'bg-purple-400', 'bg-orange-400'];
+                        $titles = ['No. of Loans', 'Total Requested', 'Total Approved', 'Total Disbursed'];
+                        $values = [
+                            $summary['total_loans'],
+                            number_format($summary['total_requested'], 2),
+                            number_format($summary['total_approved'], 2),
+                            number_format($summary['total_disbursed'], 2)
+                        ];
+                        foreach ($titles as $i => $title) {
+                            echo '<div class="col-sm-6 col-md-3">
+                                <div class="panel panel-body ' . $colors[$i] . ' has-bg-image">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class=" icon-3x opacity-75">₱</i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3>' . $values[$i] . '</h3>
+                                            <span class="text-uppercase text-size-mini">' . $title . '</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>';
+                        }
                         ?>
                     </div>
 
@@ -208,20 +196,18 @@ require('db_connect.php');
                     <div class="panel panel-body">
                         <form class="heading-form" id="form-loan" method="POST">
                             <input type="hidden" name="submit-loan">
+                            <input type="hidden" id="input-status" name="status" value="">
                             <ul class="breadcrumb-elements" style="float:left">
                                 <li style="padding-top: 2px;padding-right: 2px">
                                     <div class="btn-group">
-                                        <!-- <input type="hidden" value="<?php echo $_SESSION['loan-report-member'] ?? ''; ?>" name="member_id" id="member_id"> -->
                                         <input style="width: 230px" autocomplete="off" type="search" class="form-control"
                                             id="member-input" value="<?php echo $selected_member; ?>" name="membername">
                                         <span id="searchclearmember" class="glyphicon glyphicon-remove-circle"></span>
                                         <div id="show-search-member"></div>
                                     </div>
                                 </li>
-                                <!-- <input type="hidden" id="input-status" name="status" value="<?php echo $_SESSION['loan-report-status'] ?? ''; ?>"> -->
                                 <li class="text-center" style="padding-top: 2px;padding-right: 2px;width:auto;">
                                     <div class="btn-group">
-                                        <!-- <button type="button" class="btn btn-default btn-rounded"><span id="span-status"><?php echo $status_text; ?></span></button> -->
                                         <button type="button" class="btn btn-default btn-rounded dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
                                         <ul class="dropdown-menu dropdown-menu-right">
                                             <li onclick="select_status(this)" status-val="pending" status-name="Pending"><a href="#">Pending</a></li>
@@ -257,7 +243,7 @@ require('db_connect.php');
                                         <th>Requested Amount</th>
                                         <th>Approved Amount</th>
                                         <th>Disbursed Amount</th>
-                                        <th>Term (Months)</th>
+                                        <th>Term</th>
                                         <th>Interest Rate</th>
                                         <th>Status</th>
                                         <th>Repayment Progress</th>
@@ -266,54 +252,24 @@ require('db_connect.php');
 
                                 <tbody>
                                     <?php
-                                    // $loan_sql = "
-                                    //               SELECT 
-                                    //                 l.loan_app_id,
-                                    //                 c.name AS member_name,
-                                    //                 l.requested_amount,
-                                    //                 COALESCE(a.approved_amount, 0) AS approved_amount,
-                                    //                 COALESCE(a.approved_term, 0) AS approved_term,
-                                    //                 COALESCE(a.interest_rate, 0) AS interest_rate,
-                                    //                 COALESCE(t.total_payable, 0) AS total_payable,
-                                    //                 COALESCE(t.disbursed_amount, 0) AS disbursed_amount,
-                                    //                 l.status
-                                    //                 FROM tbl_loan_application l
-                                    //                 LEFT JOIN tbl_customer c ON c.cust_id = l.customer_id
-                                    //                 LEFT JOIN tbl_loan_approval a ON a.loan_app_id = l.loan_app_id
-                                    //                 LEFT JOIN tbl_loan_transactions t ON t.loan_app_id = l.loan_app_id
-                                    //                 WHERE 1=1 $member_filter $status_filter
-                                    //                 ORDER BY l.application_date DESC
-                                    //                       ";
+                                    while ($row = $loan_query->fetch_assoc()) {
+                                        $progress = ($row['total_due'] > 0)
+                                            ? round(($row['total_paid'] / $row['total_due']) * 100, 2)
+                                            : 0;
 
-                                    // $loan_query = $db->query($loan_sql);
-
-                                    // while ($row = $loan_query->fetch_assoc()) {
-                                    //     // Fetch total paid for this loan
-                                    //     $stmt_paid = $db->prepare("SELECT COALESCE(SUM(amount_paid),0) AS total_paid FROM tbl_loan_repayment WHERE loan_app_id = ?");
-                                    //     $stmt_paid->bind_param("i", $row['loan_app_id']);
-                                    //     $stmt_paid->execute();
-                                    //     $result_paid = $stmt_paid->get_result();
-                                    //     $paid_total = ($result_paid->num_rows > 0) ? $result_paid->fetch_assoc()['total_paid'] : 0;
-                                    //     $stmt_paid->close();
-
-                                    //     $progress = ($row['total_payable'] > 0)
-                                    //         ? round(($paid_total / $row['total_payable']) * 100, 2)
-                                    //         : 0;
-
-                                    //     echo "<tr>";
-                                    //     echo "<td>{$row['loan_app_id']}</td>";
-                                    //     echo "<td>" . htmlspecialchars($row['member_name']) . "</td>";
-                                    //     echo "<td align='right'>" . number_format($row['requested_amount'], 2) . "</td>";
-                                    //     echo "<td align='right'>" . number_format($row['approved_amount'], 2) . "</td>";
-                                    //     echo "<td align='right'>" . number_format($row['disbursed_amount'], 2) . "</td>";
-                                    //     echo "<td align='center'>{$row['approved_term']}</td>";
-                                    //     echo "<td align='center'>{$row['interest_rate']}%</td>";
-                                    //     echo "<td>" . ucfirst($row['status']) . "</td>";
-                                    //     echo "<td align='center'>{$progress}%</td>";
-                                    //     echo "</tr>";
-                                    // }
+                                        echo "<tr>";
+                                        echo "<td>{$row['loan_id']}</td>";
+                                        echo "<td>" . htmlspecialchars($row['member_name'] ?? '') . "</td>";
+                                        echo "<td align='right'>" . number_format($row['requested_amount'], 2) . "</td>";
+                                        echo "<td align='right'>" . number_format($row['approved_amount'], 2) . "</td>";
+                                        echo "<td align='right'>" . number_format($row['total_released'], 2) . "</td>";
+                                        echo "<td align='center'>{$row['term_value']} {$row['term_unit']}</td>";
+                                        echo "<td align='center'>{$row['interest_rate']}%</td>";
+                                        echo "<td>" . ucfirst($row['status']) . "</td>";
+                                        echo "<td align='center'>{$progress}%</td>";
+                                        echo "</tr>";
+                                    }
                                     ?>
-
                                 </tbody>
                             </table>
                         </div>
@@ -323,7 +279,7 @@ require('db_connect.php');
             </div>
         </div>
     </div>
-
+    <?php require('includes/footer-text.php'); ?>
     <?php require('includes/footer.php'); ?>
 
     <script src="../assets/js/plugins/tables/datatables/datatables.min.js"></script>
@@ -334,13 +290,12 @@ require('db_connect.php');
             var val = el.getAttribute('status-val');
             var name = el.getAttribute('status-name');
             document.getElementById('input-status').value = val;
-            document.getElementById('span-status').innerText = name;
         }
 
         function clear_filter() {
             document.getElementById('member-input').value = '';
-            document.getElementById('member_id').value = '';
             document.getElementById('input-status').value = '';
             document.getElementById('form-loan').submit();
         }
     </script>
+</body>

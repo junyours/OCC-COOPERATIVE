@@ -178,7 +178,7 @@ require('db_connect.php');
 if (isset($_SESSION['sold-report-product']) != "") {
 	$user_query_name = "SELECT * FROM tbl_products WHERE product_id='" . $_SESSION['sold-report-product'] . "' ";
 	$user_queryname = $db->query($user_query_name);
-	while ($row = $user_queryname->fetchArray()) {
+	while ($row = $user_queryname->fetch_assoc()) {
 		$selected_product = $row['product_name'];
 	}
 } else {
@@ -313,7 +313,7 @@ if (isset($_SESSION['sold-date-required'])) {
 								$i = 0;
 								$result = $db->query($query);
 								$total = 0;
-								while ($row = $result->fetchArray()) {
+								while ($row = $result->fetch_assoc()) {
 									$i++;
 									$image = $row['image'];
 									if ($image != "") {

@@ -258,13 +258,38 @@ $payments = $db->query("
             color: #26a69a;
         }
     }
+
+    /* Smooth transition for tabs */
+    .nav-tabs>li>a {
+        transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* Hover effect */
+    .nav-tabs>li>a:hover {
+        transform: scale(1.05);
+        /* slightly bigger */
+        background-color: #b0c4de;
+        /* subtle highlight, you can change color */
+        color: #000 !important;
+        /* ensure text is readable */
+    }
+
+    /* Active tab pop effect */
+    .nav-tabs>li.active>a {
+        transform: scale(1.05);
+        font-weight: bold;
+        color: #fff !important;
+        background-color: #26a69a !important;
+        /* your main tab color */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
 </style>
 
 <body class="layout-boxed navbar-top">
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height: 65px!important" src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>
@@ -1236,6 +1261,22 @@ No loans found
                         }
                     });
                 }
+
+                $(document).ready(function() {
+
+
+                    $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+
+                        var activeTab = $(e.target).attr('href');
+
+                        localStorage.setItem('activeSettingsTab', activeTab);
+
+                    });
+                    var activeTab = localStorage.getItem('activeSettingsTab');
+                    if (activeTab) {
+                        $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
+                    }
+                });
             </script>
 
 

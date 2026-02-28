@@ -9,7 +9,7 @@ if (!isset($_SESSION['is_login_yes'], $_SESSION['user_id']) || $_SESSION['is_log
 $user_id = (int) $_SESSION['user_id'];
 
 
-// GET MEMBER
+
 $member = $db->query("
 SELECT member_id
 FROM tbl_members
@@ -18,7 +18,7 @@ WHERE user_id='$user_id'
 
 $member_id = $member['member_id'];
 
-// GET CAPITAL SHARE
+
 $capital = $db->query("
 SELECT
 COALESCE(SUM(
@@ -40,43 +40,65 @@ AND at.type_name='capital_share'
 
 $capital_balance = $capital['capital_balance'];
 
+$capital_balance = $capital['capital_balance'];
 
-// GET MIN CAPITAL
-$min = $db->query("
-SELECT setting_value
-FROM system_settings
-WHERE setting_key='min_capital_required'
+$savings = $db->query("
+SELECT
+COALESCE(SUM(
+CASE
+WHEN tt.type_name='deposit'
+THEN t.amount
+WHEN tt.type_name='withdrawal'
+THEN -t.amount
+ELSE 0
+END
+),0) AS savings_balance
+FROM accounts a
+JOIN account_types at ON at.account_type_id=a.account_type_id
+LEFT JOIN transactions t ON t.account_id=a.account_id
+LEFT JOIN transaction_types tt ON tt.transaction_type_id=t.transaction_type_id
+WHERE a.member_id='$member_id'
+AND at.type_name='savings'
 ")->fetch_assoc();
 
-$min_capital = $min['setting_value'];
+$savings_balance = $savings['savings_balance'];
 
 
-// CHECK ELIGIBILITY
-$eligible = $capital_balance >= $min_capital;
+$settings = [];
+$res = $db->query("
+SELECT setting_key, setting_value
+FROM system_settings
+WHERE setting_key IN ('min_capital_required','min_savings_required')
+");
 
+while ($row = $res->fetch_assoc()) {
+    $settings[$row['setting_key']] = $row['setting_value'];
+}
+
+$min_capital = $settings['min_capital_required'];
+$min_savings = $settings['min_savings_required'];
+
+
+$eligible = ($capital_balance >= $min_capital) && ($savings_balance >= $min_savings);
 ?>
-
 <link rel="stylesheet" href="../css/mobile-dashboard.css">
 
 <body class="layout-boxed navbar-top">
 
 
-    <!-- NAVBAR -->
+
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="dashboard.php">
-                <img style="height: 65px!important" src="../images/your_logo.png">
-                <span>OCC Cooperative</span>
-            </a>
+            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
         </div>
         <div class="navbar-collapse collapse">
             <?php require('../admin/includes/sidebar.php'); ?>
         </div>
     </div>
 
-    <!-- PAGE CONTAINER -->
+
     <div class="page-container">
-        <!-- MOBILE VIEW -->
+
         <div class="mobile-view">
             <div class="mobile-header">
                 Loan Page
@@ -99,24 +121,23 @@ $eligible = $capital_balance >= $min_capital;
             </div>
             <?php if ($eligible) { ?>
                 <div class="alert alert-success">
-                    ✅ Eligible for Loan
+                    Eligible for Loan
                 </div>
                 <a href="apply_loan.php" class="btn btn-primary btn-block">
                     Apply Loan
                 </a>
             <?php } else { ?>
                 <div class="alert alert-danger">
-                    ❌ Not Eligible
+                    Not Eligible
                 </div>
             <?php } ?>
         </div>
 
 
 
-        <!-- DESKTOP VIEW -->
+
         <div class="page-content desktop-view">
 
-            <!-- Main content -->
             <div class="content-wrapper">
                 <div class="page-header page-header-default">
                     <div class="page-header-content">
@@ -139,11 +160,11 @@ $eligible = $capital_balance >= $min_capital;
                         </ul>
                     </div>
                 </div>
-                <!-- Content area -->
+
                 <div class="content">
 
                     <div class="row">
-                        <!-- Capital Share Panel -->
+
                         <div class="col-sm-6 col-md-3">
                             <div class="panel panel-body bg-success-400 has-bg-image">
                                 <div class="media no-margin">
@@ -163,7 +184,7 @@ $eligible = $capital_balance >= $min_capital;
                         </div>
 
 
-                        <!-- Required Capital -->
+
                         <div class="col-sm-6 col-md-3">
                             <div class="panel panel-body bg-danger-400 has-bg-image">
                                 <div class="media no-margin">
@@ -183,7 +204,7 @@ $eligible = $capital_balance >= $min_capital;
                         </div>
 
 
-                        <!-- Eligibility Status -->
+
                         <div class="col-sm-6 col-md-3">
                             <div class="panel panel-body <?= $eligible ? 'bg-teal-400' : 'bg-warning-400' ?> has-bg-image">
                                 <div class="media no-margin">
@@ -203,86 +224,23 @@ $eligible = $capital_balance >= $min_capital;
                         </div>
                     </div>
 
-
-                    <!-- Apply Loan Panel -->
                     <div class="panel panel-white">
-
                         <div class="panel-heading">
                             <h6 class="panel-title">
                                 Apply Loan
                             </h6>
                         </div>
-                        <div class="panel-body text-center">
-                            <?php if ($eligible) { ?>
-                                <?php if (!isset($_GET['apply'])) { ?>
-                                    <!-- APPLY BUTTON -->
-                                    <a href="?apply=1" class="btn bg-teal-400 btn-lg">
-                                        Apply Loan
-                                    </a>
-                                <?php } else { ?>
-                                    <!-- APPLICATION FORM -->
-                                    <form method="POST">
-                                        <div class="form-group text-left">
-                                            <label>Loan Amount</label>
-                                            <input type="number"
-                                                name="loan_amount"
-                                                class="form-control"
-                                                required>
-                                        </div>
-                                        <div class="form-group text-left">
-                                            <label>Loan Purpose</label>
-                                            <textarea
-                                                name="loan_purpose"
-                                                class="form-control"
-                                                required></textarea>
-                                        </div>
-                                        <br>
-                                        <button type="submit"
-                                            name="applyLoan"
-                                            class="btn bg-teal-400 btn-lg">
-                                            Submit Application
-                                        </button>
-                                        <a href="loan.php"
-                                            class="btn btn-default btn-lg">
-                                            Cancel
-                                        </a>
-                                    </form>
-                                <?php } ?>
-                            <?php } else { ?>
-                                <div class="alert alert-warning">
-                                    <strong>You are not eligible yet.</strong>
-                                </div>
-                                <!-- REQUIREMENTS UI -->
-                                <div class="panel panel-body bg-grey-100">
-                                    <h5 class="text-semibold text-teal-400">
-                                        Requirements to Qualify:
-                                    </h5>
-                                    <ul class="list list-icons text-left">
-                                        <li class="<?= $capital_balance >= $min_capital ? 'text-success' : 'text-danger' ?>">
-                                            <i class="<?= $capital_balance >= $min_capital ? 'icon-checkmark' : 'icon-cross' ?>"></i>
-                                            Minimum Capital Share of
-                                            ₱ <?= number_format($min_capital, 2) ?>
-                                        </li>
-                                        <li class="text-success">
-                                            <i class="icon-checkmark"></i>
-                                            Active Member Account
-                                        </li>
-                                        <li class="text-success">
-                                            <i class="icon-checkmark"></i>
-                                            No Pending Loan Defaults
-                                        </li>
-                                    </ul>
-                                    <br>
-                                    <a href="capital_share.php"
-                                        class="btn bg-success-400 btn-block">
-                                        Add Capital Share
-                                    </a>
-                                </div>
-                            <?php } ?>
-                        </div>
+
+                        <?php if ($eligible) { ?>
+                            <div class="alert alert-success">Eligible for Loan</div>
+                            <a href="javascript:void(0)" class="btn btn-primary btn-block" data-bs-toggle="modal" data-bs-target="#loanApplicationModal">
+                                Apply Loan
+                            </a>
+                        <?php } else { ?>
+                            <div class="alert alert-danger">Not Eligible</div>
+                        <?php } ?>
                     </div>
-                    <!-- /content wrapper -->
-                    <!-- MOBILE BOTTOM NAV -->
+
                     <div class="mobile-bottom-nav">
                         <a href="transaction_history.php">
                             <i class="icon-history"></i>
@@ -302,9 +260,123 @@ $eligible = $capital_balance >= $min_capital;
                         </a>
                     </div>
                 </div>
-                <!-- /page content -->
+
+
+                <!-- Loan Application Modal -->
+                <div class="modal fade" id="loanApplicationModal" tabindex="-1" role="dialog" aria-labelledby="loanApplicationModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-teal-400 text-white">
+                                <h5 class="modal-title" id="loanApplicationModalLabel">Apply for Loan</h5>
+                                <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="loanApplicationForm">
+                                    <input type="hidden" name="member_id" value="<?= $member_id ?>">
+
+                                    <div class="form-group">
+                                        <label>Loan Type</label>
+                                        <select name="loan_type_id" class="form-control" required>
+                                            <option value="">Select Loan Type</option>
+                                            <?php
+                                            $loanTypes = $db->query("SELECT loan_type_id, loan_type_name FROM loan_types WHERE status=1");
+                                            while ($lt = $loanTypes->fetch_assoc()) {
+                                                echo "<option value='{$lt['loan_type_id']}'>{$lt['loan_type_name']}</option>";
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Loan Amount</label>
+                                        <input type="number" name="requested_amount" class="form-control" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Purpose</label>
+                                        <textarea name="purpose" class="form-control" required></textarea>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        <button type="submit" class="btn bg-teal-400 btn-lg">Submit Application</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
                 <?php require('../admin/includes/footer-text.php'); ?>
                 <?php require('../admin/includes/footer.php'); ?>
 
 
 </body>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="../assets/js/plugins/notifications/jgrowl.min.js"></script>
+<script src="../js/validator.min.js"></script>
+
+<script>
+    $("#loanApplicationForm").submit(function(e) {
+        e.preventDefault();
+
+        var $form = $(this);
+        var data = $form.serialize() + "&save-loan-application=1";
+        $form.find(':input[type="submit"]').prop('disabled', true);
+
+        $.ajax({
+            url: "../transaction.php",
+            type: "POST",
+            data: data,
+            success: function(response) {
+                response = response.trim();
+
+                if (response == "1") {
+                    $.jGrowl('Loan Application Submitted Successfully.', {
+                        header: 'Success',
+                        theme: 'alert-styled-right bg-success'
+                    });
+                    $form[0].reset();
+
+                    // Close modal
+                    var modalEl = document.getElementById('loanApplicationModal');
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+
+                    setTimeout(() => location.reload(), 1500);
+
+                } else if (response == "no_changes") {
+                    $.jGrowl('Nothing was changed.', {
+                        header: 'Notice',
+                        theme: 'alert-styled-right bg-info'
+                    });
+
+                } else if (response == "not_eligible") {
+                    $.jGrowl('You are not eligible to apply for this loan.', {
+                        header: 'Warning',
+                        theme: 'alert-styled-right bg-warning'
+                    });
+
+                } else {
+                    $.jGrowl('Something went wrong. Please try again.', {
+                        header: 'Error',
+                        theme: 'alert-styled-right bg-danger'
+                    });
+                }
+
+                $form.find(':input[type="submit"]').prop('disabled', false);
+            },
+            error: function() {
+                $.jGrowl('Server error. Please try again later.', {
+                    header: 'Error',
+                    theme: 'alert-styled-right bg-danger'
+                });
+                $form.find(':input[type="submit"]').prop('disabled', false);
+            }
+        });
+    });
+</script>

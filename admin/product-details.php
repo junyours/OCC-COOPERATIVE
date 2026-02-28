@@ -36,13 +36,69 @@ if (
 		white-space: nowrap;
 		/* prevent text from wrapping to next line */
 	}
+
+	/* Pop effect for breadcrumb links */
+	.breadcrumb-elements a {
+		display: inline-block;
+		/* needed for transform */
+		transition: all 0.2s ease;
+	}
+
+	.breadcrumb-elements a:hover {
+		transform: scale(1.05);
+		/* slightly bigger */
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+		/* subtle shadow */
+		border-radius: 5px;
+		/* optional: rounded edges for nicer look */
+		background-color: rgba(0, 128, 128, 0.1);
+		/* subtle background change */
+	}
+
+	img.barcode-hover {
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+		cursor: pointer;
+		/* shows it’s clickable */
+	}
+
+	img.barcode-hover:hover {
+		transform: scale(1.1);
+		/* slightly bigger on hover */
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+		/* subtle shadow pop */
+	}
+
+	/* Smooth transition for tabs */
+	.nav-tabs>li>a {
+		transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+	}
+
+	/* Hover effect */
+	.nav-tabs>li>a:hover {
+		transform: scale(1.05);
+		/* slightly bigger */
+		background-color: #b0c4de;
+		/* subtle highlight, you can change color */
+		color: #000 !important;
+		/* ensure text is readable */
+	}
+
+	/* Active tab pop effect */
+	.nav-tabs>li.active>a {
+		transform: scale(1.05);
+		font-weight: bold;
+		color: #fff !important;
+		background-color: #26a69a !important;
+		/* your main tab color */
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	}
 </style>
 
 <body class="layout-boxed navbar-top">
 	<!-- Main navbar -->
 	<div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
 		<div class="navbar-header">
-			<a class="navbar-brand" href="index.php"><img style="height: 65px!important" src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+			<a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
 			<ul class="nav navbar-nav visible-xs-block">
 				<li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
 			</ul>
@@ -146,23 +202,13 @@ if (
 													</tr>
 													<tr class="border-double">
 														<td class="text-size-small">Product Code</td>
-														<!-- <td>
-															<a
-																href="barcode.php?codetype=Code39&size=40&text=<?= $product_code ?>&print=true"
-																download="barcode_<?= preg_replace('/[^A-Za-z0-9_\-]/', '_', $product_name) ?>_<?= $product_code ?>.png"
-																title="Download Barcode for <?= htmlspecialchars($product_name) ?>">
-																<img
-																	alt="<?= $product_name ?> (<?= $product_code ?>)"
-																	src="barcode.php?codetype=Code39&size=40&text=<?= $product_code ?>&print=true"
-																	style="cursor:pointer;" />
-															</a>
-														</td> -->
+
 														<td>
 															<img
+																class="barcode-hover"
 																alt="<?= $product_name ?> (<?= $product_code ?>)"
 																title="Print barcode for <?= $product_name ?>"
 																src="barcode.php?codetype=Code39&size=40&text=<?= $product_code ?>&print=true"
-																style="cursor:pointer;"
 																onclick="printBarcode('<?= $product_code ?>', '<?= $product_name ?>')" />
 														</td>
 
@@ -745,6 +791,22 @@ if (
 	function upload_image() {
 		$("#modal_upload").modal('show');
 	}
+
+	$(document).ready(function() {
+
+
+		$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+
+			var activeTab = $(e.target).attr('href');
+
+			localStorage.setItem('activeSettingsTab', activeTab);
+
+		});
+		var activeTab = localStorage.getItem('activeSettingsTab');
+		if (activeTab) {
+			$('.nav-tabs a[href="' + activeTab + '"]').tab('show');
+		}
+	});
 </script>
 
 

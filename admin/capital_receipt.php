@@ -83,7 +83,7 @@ $account_number = $data['account_number'];
     <div class="receipt">
 
         <div class="text-center">
-            <h3>OCC COOPERATIVE</h3>
+            <h3>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</h3>
             <p>Capital Share Receipt</p>
         </div>
 

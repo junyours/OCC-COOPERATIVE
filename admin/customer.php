@@ -50,13 +50,48 @@ $result = $db->query($query);
         white-space: nowrap;
 
     }
+
+    /* Hover effect for member table rows */
+    /* Make member rows pop on hover */
+    table.datatable-button-html5-basic tbody tr {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        /* smooth animation */
+    }
+
+    table.datatable-button-html5-basic tbody tr:hover {
+        background-color: #e0f7fa;
+        /* light teal */
+        transform: scale(1.02);
+        /* slightly bigger */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        /* soft shadow */
+    }
+
+    /* Pop effect for breadcrumb links */
+    .breadcrumb-elements a {
+        display: inline-block;
+        /* needed for transform */
+        transition: all 0.2s ease;
+    }
+
+    .breadcrumb-elements a:hover {
+        transform: scale(1.05);
+        /* slightly bigger */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        /* subtle shadow */
+        border-radius: 5px;
+        /* optional: rounded edges for nicer look */
+        background-color: rgba(0, 128, 128, 0.1);
+        /* subtle background change */
+    }
 </style>
 
 <body class="layout-boxed navbar-top">
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>
@@ -342,22 +377,37 @@ $result = $db->query($query);
 
     $('#form-customer').validator().on('submit', function(e) {
         if (!e.isDefaultPrevented()) {
+
             $(':input[type="submit"]').prop('disabled', true);
+
+
+            $.jGrowl('Processing registration. The member account is being created and login credentials will be sent to the registered email address..', {
+                header: 'Please Wait',
+                theme: 'alert-styled-right bg-info',
+                life: 5000
+            });
+
             var data = $(this).serialize();
+
             $.ajax({
                 type: 'POST',
                 url: '../transaction.php',
                 data: data,
                 success: function(msg) {
                     console.log(msg);
+
                     if (msg == '1') {
-                        $.jGrowl('New member successfully added.', {
-                            header: 'Success Notification',
-                            theme: 'alert-styled-right bg-success'
-                        });
+
+
                         setTimeout(function() {
-                            window.location = 'customer.php';
-                        }, 1500);
+                            $.jGrowl('New member successfully added.', {
+                                header: 'Success Notification',
+                                theme: 'alert-styled-right bg-success'
+                            });
+                            setTimeout(function() {
+                                window.location = 'customer.php';
+                            }, 1500);
+                        }, 2000);
                     } else if (msg == 'duplicate') {
                         $.jGrowl('Member already exists. Please use a unique name or contact.', {
                             header: 'Duplicate Entry',
@@ -365,12 +415,18 @@ $result = $db->query($query);
                         });
                         $(':input[type="submit"]').prop('disabled', false);
                     } else {
-                        alert('Something went wrong!');
+                        $.jGrowl('Something went wrong while saving member.', {
+                            header: 'Error',
+                            theme: 'alert-styled-right bg-danger'
+                        });
                         $(':input[type="submit"]').prop('disabled', false);
                     }
                 },
                 error: function() {
-                    alert('Something went wrong!');
+                    $.jGrowl('Server error occurred.', {
+                        header: 'Error',
+                        theme: 'alert-styled-right bg-danger'
+                    });
                     $(':input[type="submit"]').prop('disabled', false);
                 }
             });

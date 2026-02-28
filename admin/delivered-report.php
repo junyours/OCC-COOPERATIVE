@@ -190,7 +190,7 @@
    	if (isset($_SESSION['delivered-report-product'])!="") {
 		$user_query_name = "SELECT * FROM tbl_products WHERE product_id='".$_SESSION['delivered-report-product']."' ";
 		$user_queryname = $db->query($user_query_name);
-		while($row = $user_queryname->fetchArray()) {
+		while($row = $user_queryname->fetch_assoc()) {
 			$selected_product = $row['product_name'];
 		}
 	}else{
@@ -200,7 +200,7 @@
 	if (isset($_SESSION['delivered-report-supplier'])!="") {
 		$user_query_name = "SELECT * FROM tbl_supplier WHERE supplier_id='".$_SESSION['delivered-report-supplier']."' ";
 		$user_queryname = $db->query($user_query_name);
-		while($row = $user_queryname->fetchArray()) { 
+		while($row = $user_queryname->fetch_assoc()) { 
 			$selected_supplier = $row['supplier_name'];
 		}
 	}else{
@@ -368,7 +368,7 @@
 									    $i = 0 ;
 			                            $result = $db->query($query);
 			                            $total = 0;
-			                            while($row = $result->fetchArray()) { 
+			                            while($row = $result->fetch_assoc()) { 
 			                            	$i++;
 			                            	$quantity = $row['receiving_quantity'];
 			                            	$price = $row['receiving_price'];

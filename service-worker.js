@@ -1,4 +1,4 @@
-const CACHE_NAME = "occ-coop-v1";
+const CACHE_NAME = "occ-coop-v2";
 
 const urlsToCache = [
   "/",

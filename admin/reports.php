@@ -86,7 +86,7 @@
    	if (isset($_SESSION['employee-report-user'])!="") {
 		$user_query_name = "SELECT * FROM tbl_users WHERE user_id='".$_SESSION['employee-report-user']."' ";
 		$user_queryname = $db->query($user_query_name);
-		while($row = $user_queryname->fetchArray()) {
+		while($row = $user_queryname->fetch_assoc()) {
 			$selected_user = $row['fullname'];
 		}
 	}else{
@@ -96,7 +96,7 @@
 	if (isset($_SESSION['sale-report-customer'])!="") {
 		$customer_query_name = "SELECT * FROM tbl_customer WHERE cust_id='".$_SESSION['sale-report-customer']."' ";
 		$customer_queryname = $db->query($customer_query_name);
-		while($row = $customer_queryname->fetchArray()) {
+		while($row = $customer_queryname->fetch_assoc()) {
 			$selected_customer = $row['name'];
 		}
 	}else{

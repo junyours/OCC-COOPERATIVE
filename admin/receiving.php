@@ -132,7 +132,7 @@ if ($row = $result_beginning->fetch_assoc()) {
 	<div class="main-div">
 		<div class="top-content">
 			<div class="logo">
-				<img src="../images/your_logo.png">
+				<img src="../images/main_logo.jpg">
 			</div>
 			<div class="search-div">
 				<div class="form-group has-feedback has-feedback-left input-text">

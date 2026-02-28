@@ -8,14 +8,14 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "assets/icons/your_logo.png",
+      "src": "assets/icons/main_logo.jpg",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "assets/icons/your_logo.png",
+      "src": "assets/icons/main_logo.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpg"
     }
   ]
 }

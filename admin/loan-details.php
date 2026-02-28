@@ -15,45 +15,45 @@ if (!$loan) {
 ?>
 
 <style>
-	.navbar-brand {
-		display: flex;
-		align-items: center;
-		/* vertically center image + text */
-		gap: 0px;
-		/* space between logo and text */
-		font-weight: 800;
-		color: white;
-		/* adjust to your navbar color */
-		text-decoration: none;
-		font-size: 50px;
-	}
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+        /* vertically center image + text */
+        gap: 0px;
+        /* space between logo and text */
+        font-weight: 800;
+        color: white;
+        /* adjust to your navbar color */
+        text-decoration: none;
+        font-size: 50px;
+    }
 
-	.navbar-brand img {
-		height: 40px;
-		/* adjust logo height */
-		width: auto;
-		object-fit: contain;
-	}
+    .navbar-brand img {
+        height: 40px;
+        /* adjust logo height */
+        width: auto;
+        object-fit: contain;
+    }
 
-	.navbar-brand span {
-		white-space: nowrap;
-		/* prevent text from wrapping to next line */
-	}
+    .navbar-brand span {
+        white-space: nowrap;
+        /* prevent text from wrapping to next line */
+    }
 </style>
 
 <body class="layout-boxed navbar-top">
-	<!-- Main navbar -->
-	<div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
-		<div class="navbar-header">
-			<a class="navbar-brand" href="index.php"><img style="height: 40px!important" src="../images/farmers-logo.png" alt=""><span>Lourdes Farmers Multi-Purpose Cooperative</span></a>
-			<ul class="nav navbar-nav visible-xs-block">
-				<li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
-			</ul>
-		</div>
-		<div class="navbar-collapse collapse" id="navbar-mobile">
-			<?php require('includes/sidebar.php'); ?>
-		</div>
-	</div>
+    <!-- Main navbar -->
+    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
+        <div class="navbar-header">
+ <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+            <ul class="nav navbar-nav visible-xs-block">
+                <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
+            </ul>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-mobile">
+            <?php require('includes/sidebar.php'); ?>
+        </div>
+    </div>
 
     <div class="page-container">
         <div class="page-content">

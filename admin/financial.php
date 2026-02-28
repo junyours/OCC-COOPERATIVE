@@ -354,6 +354,24 @@ $allMembersArray = $all_members->fetch_all(MYSQLI_ASSOC);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         cursor: pointer;
     }
+
+    /* Pop effect for breadcrumb links */
+    .breadcrumb-elements a {
+        display: inline-block;
+        /* needed for transform */
+        transition: all 0.2s ease;
+    }
+
+    .breadcrumb-elements a:hover {
+        transform: scale(1.05);
+        /* slightly bigger */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        /* subtle shadow */
+        border-radius: 5px;
+        /* optional: rounded edges for nicer look */
+        background-color: rgba(0, 128, 128, 0.1);
+        /* subtle background change */
+    }
 </style>
 
 
@@ -363,7 +381,7 @@ $allMembersArray = $all_members->fetch_all(MYSQLI_ASSOC);
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>
@@ -401,9 +419,9 @@ $allMembersArray = $all_members->fetch_all(MYSQLI_ASSOC);
                                 </a>
                             </li>
                             <li>
-                                <a href="patronage_dividend.php">
+                                <!-- <a href="patronage_dividend.php">
                                     <i class="icon-stats-bars2 text-orange-400"></i> Patronage & Dividend
-                                </a>
+                                </a> -->
                             </li>
                         </ul>
                     </div>
@@ -795,14 +813,24 @@ $allMembersArray = $all_members->fetch_all(MYSQLI_ASSOC);
                         url: "../transaction.php",
                         data: data,
                         success: function(resp) {
-                            $.jGrowl("Contribution saved successfully!", {
-                                header: 'Success',
-                                theme: 'bg-success'
-                            });
-                            $('#modal_share').modal('hide');
-                            setTimeout(function() {
-                                location.reload();
-                            }, 5000);
+                            resp = resp.trim(); // remove extra spaces/newlines
+
+                            // Check for error from server
+                            if (resp.startsWith("Error:") || resp.includes("Minimum monthly capital share")) {
+                                $.jGrowl(resp, {
+                                    header: 'Error',
+                                    theme: 'bg-danger'
+                                });
+                            } else {
+                                $.jGrowl("Contribution saved successfully!", {
+                                    header: 'Success',
+                                    theme: 'bg-success'
+                                });
+                                $('#modal_share').modal('hide');
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 1000);
+                            }
                         },
                         error: function() {
                             $.jGrowl("Error saving contribution.", {
@@ -824,14 +852,31 @@ $allMembersArray = $all_members->fetch_all(MYSQLI_ASSOC);
                     url: "../transaction.php",
                     data: data,
                     success: function(resp) {
-                        $.jGrowl("Savings saved successfully!", {
-                            header: 'Success',
-                            theme: 'bg-success'
-                        });
-                        $('#modal_savings').modal('hide');
-                        setTimeout(function() {
-                            location.reload();
-                        }, 5000);
+                        resp = resp.trim(); // remove extra whitespace/newlines
+
+                        if (resp.startsWith("Error:")) {
+                            // Show error returned from server
+                            $.jGrowl(resp, {
+                                header: 'Error',
+                                theme: 'bg-danger'
+                            });
+                        } else if (resp == "1") {
+                            // Only show success if server returned "1"
+                            $.jGrowl("Savings saved successfully!", {
+                                header: 'Success',
+                                theme: 'bg-success'
+                            });
+                            $('#modal_savings').modal('hide');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            // Unexpected response
+                            $.jGrowl("Unexpected response: " + resp, {
+                                header: 'Warning',
+                                theme: 'bg-warning'
+                            });
+                        }
                     },
                     error: function() {
                         $.jGrowl("Error saving savings.", {

@@ -74,43 +74,52 @@ $supplier_row = $supplier_result->fetch_assoc();
 $supplier_total = $supplier_row['total_supplier'];
 
 
-// // Loan Stats Queries
-// $loan_apps = $db->query("SELECT COUNT(*) AS total FROM tbl_loan_application")->fetch_assoc()['total'];
-// $loan_pending = $db->query("SELECT COUNT(*) AS total FROM tbl_loan_application WHERE status='pending'")->fetch_assoc()['total'];
-// $loan_approved = $db->query("SELECT COUNT(*) AS total FROM tbl_loan_approval")->fetch_assoc()['total'];
-// $loan_disbursed = $db->query("SELECT COUNT(*) AS total FROM tbl_loan_disbursement")->fetch_assoc()['total'];
-// $total_disbursed = $db->query("SELECT IFNULL(SUM(amount_released),0) AS total FROM tbl_loan_disbursement")->fetch_assoc()['total'];
-// $total_repaid = $db->query("SELECT IFNULL(SUM(amount_paid),0) AS total FROM tbl_loan_repayment")->fetch_assoc()['total'];
+$total_savings = 0;
 
-// $outstanding = $db->query("
-//     SELECT 
-//     (SELECT IFNULL(SUM(total_payable),0) FROM tbl_loan_transactions) - 
-//     (SELECT IFNULL(SUM(amount_paid),0) FROM tbl_loan_repayment) AS outstanding
-// ")->fetch_assoc()['outstanding'];
+$query = "
+SELECT SUM(t.amount) AS total
+FROM transactions t
+JOIN accounts a ON a.account_id = t.account_id
+JOIN account_types at ON at.account_type_id = a.account_type_id
+WHERE at.type_name = 'savings'
+AND t.transaction_type_id = 1
+";
 
-// $fund_balance = $db->query("SELECT IFNULL(SUM(current_balance),0) AS total FROM tbl_loan_fund")->fetch_assoc()['total'];
+$result = $db->query($query);
+$row = $result->fetch_assoc();
+$total_savings = $row['total'] ?? 0;
 
-// // Monthly disbursement for line chart
-// $monthly_disb = $db->query("SELECT DATE_FORMAT(release_date, '%Y-%m') AS month, SUM(amount_released) AS total 
-//                             FROM tbl_loan_disbursement 
-//                             GROUP BY month ORDER BY month ASC");
-// $months = [];
-// $values = [];
-// while ($row = $monthly_disb->fetch_assoc()) {
-//     $months[] = $row['month'];
-//     $values[] = $row['total'];
-// }
 
-// // Monthly repayment
-// $monthly_rep = $db->query("SELECT DATE_FORMAT(payment_date, '%Y-%m') AS month, SUM(amount_paid) AS total 
-//                             FROM tbl_loan_repayment 
-//                             GROUP BY month ORDER BY month ASC");
-// $months2 = [];
-// $values2 = [];
-// while ($row = $monthly_rep->fetch_assoc()) {
-//     $months2[] = $row['month'];
-//     $values2[] = $row['total'];
-// }
+$total_capital_share = 0;
+
+$query = "
+SELECT SUM(t.amount) AS total
+FROM transactions t
+JOIN accounts a ON a.account_id = t.account_id
+JOIN account_types at ON at.account_type_id = a.account_type_id
+WHERE at.type_name = 'capital_share'
+AND t.transaction_type_id IN (1,3)
+";
+
+$result = $db->query($query);
+$row = $result->fetch_assoc();
+$total_capital_share = $row['total'] ?? 0;
+
+
+$total_loans_ongoing = 0;
+
+$query = "
+SELECT COUNT(*) AS total
+FROM loans
+WHERE status = 'ongoing'
+";
+
+$result = $db->query($query);
+$row = $result->fetch_assoc();
+
+$total_loans_ongoing = $row['total'] ?? 0;
+
+
 
 ?>
 
@@ -139,13 +148,29 @@ $supplier_total = $supplier_row['total_supplier'];
         white-space: nowrap;
         /* prevent text from wrapping to next line */
     }
+
+    .panel-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .panel-link .panel {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .panel-link .panel:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
 </style>
 
 <body class="layout-boxed navbar-top">
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height: 65px!important" src="../images/your_logo.png" alt=""><span>OCC Cooperative</span></a>
+            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>
@@ -179,121 +204,175 @@ $supplier_total = $supplier_row['total_supplier'];
                 <!-- Content area -->
                 <div class="content">
                     <div class="row">
-                        <div class="col-sm-6 col-md-3">
-                            <div class="panel panel-body">
-                                <div class="media no-margin">
-                                    <div class="media-left media-middle">
-                                        <i class="icon-cart icon-3x text-danger-400"></i>
-                                    </div>
-                                    <div class="media-body text-right">
-                                        <h3 class="no-margin text-semibold"><?= $total_sales ?></h3>
-                                        <span class="text-uppercase text-size-mini text-muted">today's Sale</span>
+
+                        <!-- Total Savings -->
+                        <div class="col-sm-6 col-md-4">
+                            <a href="financial.php" class="panel-link">
+                                <div class="panel panel-body bg-success-400">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class="icon-wallet icon-3x"></i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3 class="no-margin">₱ <?= number_format($total_savings, 2) ?></h3>
+                                            <span>Total Savings</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                        </div>
+
+                        <!-- Capital Share -->
+                        <div class="col-sm-6 col-md-4">
+                            <a href="financial.php" class="panel-link">
+                                <div class="panel panel-body bg-blue-400">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class="icon-coins icon-3x"></i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3 class="no-margin">₱ <?= number_format($total_capital_share, 2) ?></h3>
+                                            <span>Total Capital Share</span>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+
+                        <!-- Ongoing Loans -->
+                        <div class="col-sm-6 col-md-4">
+                            <a href="loan-report.php" class="panel-link">
+                                <div class="panel panel-body bg-danger-400">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class="icon-cash icon-3x"></i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3 class="no-margin"><?= $total_loans_ongoing ?></h3>
+                                            <span>Ongoing Loans</span>
+                                        </div>
+                                    </div>
+                                </div>
                         </div>
                         <div class="col-sm-6 col-md-3">
-                            <div class="panel panel-body panel-body-accent">
-                                <div class="media no-margin">
-                                    <div class="media-left media-middle">
-                                        <i class="icon-users icon-3x text-success-400"></i>
-                                    </div>
-                                    <div class="media-body text-right">
-                                        <h3 class="no-margin text-semibold"><?= $user_total ?></h3>
-                                        <span class="text-uppercase text-size-mini text-muted">Employee</span>
+                            <a href="daily_sales.php" class="panel-link">
+                                <div class="panel panel-body">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class="icon-cart icon-3x text-danger-400"></i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3 class="no-margin text-semibold"><?= $total_sales ?></h3>
+                                            <span class="text-uppercase text-size-mini text-muted">today's Sale</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
                         </div>
                         <div class="col-sm-6 col-md-3">
-                            <div class="panel panel-body">
-                                <div class="media no-margin">
-                                    <div class="media-left media-middle">
-                                        <i class="icon-users icon-3x text-indigo-400"></i>
-                                    </div>
-                                    <div class="media-body text-right">
-                                        <h3 class="no-margin text-semibold"><?= $customer_total ?></h3>
-                                        <span class="text-uppercase text-size-mini text-muted">Member</span>
+                            <a href="cashier.php" class="panel-link">
+                                <div class="panel panel-body">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class="icon-users icon-3x text-success-400"></i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3 class="no-margin text-semibold"><?= $user_total ?></h3>
+                                            <span class="text-uppercase text-size-mini text-muted">Employee</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                         <div class="col-sm-6 col-md-3">
-                            <div class="panel panel-body">
-                                <div class="media no-margin">
-                                    <div class="media-left media-middle">
-                                        <i class="icon-users icon-3x text-blue-400"></i>
-                                    </div>
-                                    <div class="media-body text-right">
-                                        <h3 class="no-margin text-semibold"><?= $supplier_total ?></h3>
-                                        <span class="text-uppercase text-size-mini text-muted">Supplier</span>
+                            <a href="customer.php" class="panel-link">
+                                <div class="panel panel-body">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class="icon-users icon-3x text-indigo-400"></i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3 class="no-margin text-semibold"><?= $customer_total ?></h3>
+                                            <span class="text-uppercase text-size-mini text-muted">Member</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <a href="supplier.php" class="panel-link">
+                                <div class="panel panel-body">
+                                    <div class="media no-margin">
+                                        <div class="media-left media-middle">
+                                            <i class="icon-users icon-3x text-blue-400"></i>
+                                        </div>
+                                        <div class="media-body text-right">
+                                            <h3 class="no-margin text-semibold"><?= $supplier_total ?></h3>
+                                            <span class="text-uppercase text-size-mini text-muted">Supplier</span>
+                                        </div>
+                                    </div>
+                                </div>
                         </div>
                     </div>
                     <div class="panel panel-white">
-                        <div class="panel-heading">
-                            <h6 class="panel-title"><i class="icon-chart text-teal-400"></i> Daily Sales</h6>
-                        </div>
-                        <!-- <input type="text" id="myInputTextField"> -->
-                        <div class="panel-body">
-                            <div class="row">
-                                <div class="col-sm-6 col-md-3">
-                                    <div class="panel panel-body bg-success-400 has-bg-image">
-                                        <div class="media no-margin">
-                                            <div class="media-left media-middle">
-                                                <i class="icon-cart icon-3x opacity-75"></i>
-                                            </div>
-                                            <div class="media-body text-right">
-                                                <h3 class="no-margin" id="no-sales"><?= $total_sales ?></h3>
-                                                <span class="text-uppercase text-size-mini">No. of Sales</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 col-md-3">
-                                    <div class="panel panel-body bg-blue-400 has-bg-image">
-                                        <div class="media no-margin">
-                                            <div class="media-right media-middle">
-                                                <i class="icon-3x opacity-75">₱</i>
-                                            </div>
-                                            <div class="media-body text-right">
-                                                <h3 class="no-margin"><?= number_format($all_total, 2) ?></h3>
-                                                <span class="text-uppercase text-size-mini">Sub Total</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 col-md-3">
-                                    <div class="panel panel-body bg-danger-400 has-bg-image">
-                                        <div class="media no-margin">
-                                            <div class="media-right media-middle">
-                                                <i class="icon-3x opacity-75">₱</i>
-                                            </div>
-                                            <div class="media-body text-right">
-                                                <h3 class="no-margin"><?= number_format($all_discount, 2) ?></h3>
-                                                <span class="text-uppercase text-size-mini">Discount</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 col-md-3">
-                                    <div class="panel panel-body bg-indigo-400 has-bg-image">
-                                        <div class="media no-margin">
-                                            <div class="media-left media-middle">
-                                                <i class="icon-3x opacity-75">₱</i>
-                                            </div>
-                                            <div class="media-body text-right">
-                                                <h3 class="no-margin"><?= number_format($all_total, 2) ?></h3>
-                                                <span class="text-uppercase text-size-mini">Total Amount</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
+                        <a href="daily_sales.php" class="panel-link">
+                            <div class="panel-heading">
+                                <h6 class="panel-title"><i class="icon-chart text-teal-400"></i> Daily Sales</h6>
                             </div>
-                        </div>
+                            <!-- <input type="text" id="myInputTextField"> -->
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="panel panel-body bg-success-400 has-bg-image">
+                                            <div class="media no-margin">
+                                                <div class="media-left media-middle">
+                                                    <i class="icon-cart icon-3x opacity-75"></i>
+                                                </div>
+                                                <div class="media-body text-right">
+                                                    <h3 class="no-margin" id="no-sales"><?= $total_sales ?></h3>
+                                                    <span class="text-uppercase text-size-mini">No. of Sales</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="panel panel-body bg-blue-400 has-bg-image">
+                                            <div class="media no-margin">
+                                                <div class="media-right media-middle">
+                                                    <i class="icon-3x opacity-75">₱</i>
+                                                </div>
+                                                <div class="media-body text-right">
+                                                    <h3 class="no-margin"><?= number_format($all_total, 2) ?></h3>
+                                                    <span class="text-uppercase text-size-mini">Sub Total</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="panel panel-body bg-danger-400 has-bg-image">
+                                            <div class="media no-margin">
+                                                <div class="media-right media-middle">
+                                                    <i class="icon-3x opacity-75">₱</i>
+                                                </div>
+                                                <div class="media-body text-right">
+                                                    <h3 class="no-margin"><?= number_format($all_discount, 2) ?></h3>
+                                                    <span class="text-uppercase text-size-mini">Discount</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="panel panel-body bg-indigo-400 has-bg-image">
+                                            <div class="media no-margin">
+                                                <div class="media-left media-middle">
+                                                    <i class="icon-3x opacity-75">₱</i>
+                                                </div>
+                                                <div class="media-body text-right">
+                                                    <h3 class="no-margin"><?= number_format($all_total, 2) ?></h3>
+                                                    <span class="text-uppercase text-size-mini">Total Amount</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
@@ -474,7 +553,7 @@ $supplier_total = $supplier_row['total_supplier'];
                             </div>
 
 
-                            <div class="panel panel-white border-top-xlg border-top-teal-400">
+                            <!-- <div class="panel panel-white border-top-xlg border-top-teal-400">
                                 <div class="panel-heading">
                                     <h6 class="panel-title"><i class="icon-chart text-teal-400"></i> Latest Sytem History</h6>
                                 </div>
@@ -622,143 +701,143 @@ $supplier_total = $supplier_row['total_supplier'];
                                     <div align="right"><a href="system-history.php">View All History <i class="icon-circle-right2"></i></a></div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="panel panel-white border-top-xlg border-top-teal-400">
-                                <form class="heading-form" id="form-seller" method="POST">
-                                    <input type="hidden" name="submit-seller">
-                                    <div class="panel-heading">
-                                        <h6 class="panel-title"><i class="icon-chart text-teal-400"></i> Top 5 Best Seller </h6>
-                                        <div style="position: absolute;right: 0px;margin-top: -27px;margin-right: 20px;display: flex;">
-                                            <input style="width: 180px" type="text" autocomplete="off" name="date" class="form-control daterange-buttons " value=" <?php if (isset($_SESSION['seller-report']) != "") { ?>   <?= $_SESSION['seller-report'] ?> <?php } else { ?> <?= date("m-d-Y") ?> - <?= date("m-d-Y") ?>  <?php } ?>">
-                                            <button style="margin-left: 3px" type="submit" class="btn bg-teal-400" data-toggle="tooltip" title="Search"><b><i class="icon-search4"></i></b></button>
+                        </div> -->
+                            <div class="col-lg-6">
+                                <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                    <form class="heading-form" id="form-seller" method="POST">
+                                        <input type="hidden" name="submit-seller">
+                                        <div class="panel-heading">
+                                            <h6 class="panel-title"><i class="icon-chart text-teal-400"></i> Top 5 Best Seller </h6>
+                                            <div style="position: absolute;right: 0px;margin-top: -27px;margin-right: 20px;display: flex;">
+                                                <input style="width: 180px" type="text" autocomplete="off" name="date" class="form-control daterange-buttons " value=" <?php if (isset($_SESSION['seller-report']) != "") { ?>   <?= $_SESSION['seller-report'] ?> <?php } else { ?> <?= date("m-d-Y") ?> - <?= date("m-d-Y") ?>  <?php } ?>">
+                                                <button style="margin-left: 3px" type="submit" class="btn bg-teal-400" data-toggle="tooltip" title="Search"><b><i class="icon-search4"></i></b></button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </form>
-                                <div class="panel-body product-div2">
-                                    <table class="table datatable-button-html5-basic table-hover table-bordered  ">
-                                        <thead>
-                                            <tr style="border-bottom: 4px solid #ddd;background: #eee">
-                                                <th>Product</th>
-                                                <th>Sold</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php
-                                            $best = 0;
-                                            $from = $_SESSION['seller-report-from'] ?? date("Y-m-d");
-                                            $to = $_SESSION['seller-report-to'] ?? date("Y-m-d");
-                                            $today = date("Y-m-d");
-                                            $start = strtotime('today GMT');
-                                            $date_add = date('Y-m-d', strtotime('+1 day', $start));
+                                    </form>
+                                    <div class="panel-body product-div2">
+                                        <table class="table datatable-button-html5-basic table-hover table-bordered  ">
+                                            <thead>
+                                                <tr style="border-bottom: 4px solid #ddd;background: #eee">
+                                                    <th>Product</th>
+                                                    <th>Sold</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php
+                                                $best = 0;
+                                                $from = $_SESSION['seller-report-from'] ?? date("Y-m-d");
+                                                $to = $_SESSION['seller-report-to'] ?? date("Y-m-d");
+                                                $today = date("Y-m-d");
+                                                $start = strtotime('today GMT');
+                                                $date_add = date('Y-m-d', strtotime('+1 day', $start));
 
-                                            if (isset($_SESSION['seller-report'])) {
-                                                if ($today == $from || $today == $to) {
-                                                    $query = "SELECT tbl_sales.product_id, product_name, SUM(quantity_order) AS Totalqty
+                                                if (isset($_SESSION['seller-report'])) {
+                                                    if ($today == $from || $today == $to) {
+                                                        $query = "SELECT tbl_sales.product_id, product_name, SUM(quantity_order) AS Totalqty
                   FROM tbl_sales
                   INNER JOIN tbl_products ON tbl_sales.product_id = tbl_products.product_id
                   WHERE sales_date BETWEEN '$today' AND '$date_add'
                   GROUP BY tbl_sales.product_id
                   ORDER BY Totalqty DESC
                   LIMIT 5";
-                                                } else {
-                                                    $query = "SELECT tbl_sales.product_id, product_name, SUM(quantity_order) AS Totalqty
+                                                    } else {
+                                                        $query = "SELECT tbl_sales.product_id, product_name, SUM(quantity_order) AS Totalqty
                   FROM tbl_sales
                   INNER JOIN tbl_products ON tbl_sales.product_id = tbl_products.product_id
                   WHERE sales_date BETWEEN '$from' AND '$to'
                   GROUP BY tbl_sales.product_id
                   ORDER BY Totalqty DESC
                   LIMIT 5";
-                                                }
-                                            } else {
-                                                $query = "SELECT tbl_sales.product_id, product_name, SUM(quantity_order) AS Totalqty
+                                                    }
+                                                } else {
+                                                    $query = "SELECT tbl_sales.product_id, product_name, SUM(quantity_order) AS Totalqty
               FROM tbl_sales
               INNER JOIN tbl_products ON tbl_sales.product_id = tbl_products.product_id
               WHERE sales_date BETWEEN '$today' AND '$date_add'
               GROUP BY tbl_sales.product_id
               ORDER BY Totalqty DESC
               LIMIT 5";
-                                            }
+                                                }
 
-                                            // Execute query with MySQLi
-                                            $result_top = $db->query($query);
+                                                // Execute query with MySQLi
+                                                $result_top = $db->query($query);
 
-                                            if ($result_top && $result_top->num_rows > 0) {
-                                                while ($row_top = $result_top->fetch_assoc()) {
-                                                    $best++;
-                                            ?>
+                                                if ($result_top && $result_top->num_rows > 0) {
+                                                    while ($row_top = $result_top->fetch_assoc()) {
+                                                        $best++;
+                                                ?>
+                                                        <tr>
+                                                            <td><?= htmlspecialchars($row_top['product_name']) ?></td>
+                                                            <td class="text-center"><?= htmlspecialchars($row_top['Totalqty']) ?></td>
+                                                        </tr>
+                                                    <?php
+                                                    }
+                                                }
+
+                                                if ($best == 0) {
+                                                    ?>
+
                                                     <tr>
-                                                        <td><?= htmlspecialchars($row_top['product_name']) ?></td>
-                                                        <td class="text-center"><?= htmlspecialchars($row_top['Totalqty']) ?></td>
+                                                        <td class="text-center" colspan="2">No products found!</td>
                                                     </tr>
                                                 <?php
                                                 }
-                                            }
-
-                                            if ($best == 0) {
                                                 ?>
 
-                                                <tr>
-                                                    <td class="text-center" colspan="2">No products found!</td>
-                                                </tr>
-                                            <?php
-                                            }
-                                            ?>
-
-                                        <tbody>
-                                    </table>
+                                            <tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="panel panel-white border-top-xlg border-top-teal-400">
-                                <div class="panel-heading">
-                                    <h6 class="panel-title"><i class="icon-chart text-teal-400"></i> Low Inventory</h6>
-                                </div>
-                                <div class="panel-body product-div2">
-                                    <table class="table datatable-button-html5-basic table-hover table-bordered  ">
-                                        <thead>
-                                            <tr style="border-bottom: 4px solid #ddd;background: #eee">
-                                                <th>Name</th>
-                                                <th>In Stock</th>
+                            <div class="col-lg-6">
+                                <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                    <div class="panel-heading">
+                                        <h6 class="panel-title"><i class="icon-chart text-teal-400"></i> Low Inventory</h6>
+                                    </div>
+                                    <div class="panel-body product-div2">
+                                        <table class="table datatable-button-html5-basic table-hover table-bordered  ">
+                                            <thead>
+                                                <tr style="border-bottom: 4px solid #ddd;background: #eee">
+                                                    <th>Name</th>
+                                                    <th>In Stock</th>
+                                                </tr>
+                                            </thead>
+                                            <tr>
+                                                <?php
+                                                $query = "SELECT * FROM tbl_products WHERE quantity <= critical_qty";
+                                                $result_top = $db->query($query);
+
+
+                                                if ($result_top && $result_top->num_rows > 0) {
+                                                    while ($row_top = $result_top->fetch_assoc()) {
+                                                ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($row_top['product_name']) ?></td>
+                                                <td class="text-center"><?= htmlspecialchars($row_top['quantity']) ?> <?= htmlspecialchars($row_top['unit']) ?></td>
                                             </tr>
-                                        </thead>
+                                        <?php
+                                                    }
+                                                } else {
+                                        ?>
                                         <tr>
-                                            <?php
-                                            $query = "SELECT * FROM tbl_products WHERE quantity <= critical_qty";
-                                            $result_top = $db->query($query);
-
-
-                                            if ($result_top && $result_top->num_rows > 0) {
-                                                while ($row_top = $result_top->fetch_assoc()) {
-                                            ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row_top['product_name']) ?></td>
-                                            <td class="text-center"><?= htmlspecialchars($row_top['quantity']) ?> <?= htmlspecialchars($row_top['unit']) ?></td>
+                                            <td class="text-center" colspan="2">No products below critical quantity!</td>
                                         </tr>
                                     <?php
                                                 }
-                                            } else {
                                     ?>
-                                    <tr>
-                                        <td class="text-center" colspan="2">No products below critical quantity!</td>
-                                    </tr>
-                                <?php
-                                            }
-                                ?>
 
-                                    </table>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- /content area -->
                     </div>
-                    <!-- /content area -->
+                    <!-- /main content -->
                 </div>
-                <!-- /main content -->
+                <!-- /page content -->
             </div>
-            <!-- /page content -->
-        </div>
-        <!-- /page container -->
+            <!-- /page container -->
 </body>
 <?php require('includes/footer.php'); ?>
 <script type="text/javascript" src="../assets/js/plugins/ui/moment/moment.min.js"></script>

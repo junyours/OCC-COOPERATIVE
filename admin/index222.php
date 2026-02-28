@@ -45,7 +45,7 @@
                     $january_total = 0;
                     $january_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$january'  GROUP BY sales_no ";
                     $result_january = $db->query($january_query);
-                    while ($row_january = $result_january->fetchArray()) {
+                    while ($row_january = $result_january->fetch_assoc()) {
                         $january_subtotal = $row_january['total_amount'];
                         $january_total += $january_subtotal;
                     }
@@ -68,7 +68,7 @@
                     $march_total = 0;
                     $march_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$march'  GROUP BY sales_no ";
                     $result_march = $db->query($march_query);
-                    while ($row_febuary = $result_march->fetchArray()) {
+                    while ($row_febuary = $result_march->fetch_assoc()) {
                         $march_subtotal = $row_febuary['total_amount'];
                         $march_total += $march_subtotal;
                     }
@@ -79,7 +79,7 @@
                     $april_total = 0;
                     $april_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$april'  GROUP BY sales_no ";
                     $result_april = $db->query($april_query);
-                    while ($row_febuary = $result_april->fetchArray()) {
+                    while ($row_febuary = $result_april->fetch_assoc()) {
                         $april_subtotal = $row_febuary['total_amount'];
                         $april_total += $april_subtotal;
                     }
@@ -90,7 +90,7 @@
                     $may_total = 0;
                     $may_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$may'  GROUP BY sales_no ";
                     $result_may = $db->query($may_query);
-                    while ($row_may = $result_may->fetchArray()) {
+                    while ($row_may = $result_may->fetch_assoc()) {
                         $may_subtotal = $row_may['total_amount'];
                         $may_total += $may_subtotal;
                     }
@@ -101,7 +101,7 @@
                     $june_total = 0;
                     $june_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$june'  GROUP BY sales_no ";
                     $result_june = $db->query($june_query);
-                    while ($row_june = $result_june->fetchArray()) {
+                    while ($row_june = $result_june->fetch_assoc()) {
                         $june_subtotal = $row_june['total_amount'];
                         $june_total += $june_subtotal;
                     }
@@ -112,7 +112,7 @@
                     $july_total = 0;
                     $july_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$july'  GROUP BY sales_no ";
                     $result_july = $db->query($july_query);
-                    while ($row_july = $result_july->fetchArray()) {
+                    while ($row_july = $result_july->fetch_assoc()) {
                         $july_subtotal = $row_july['total_amount'];
                         $july_total += $july_subtotal;
                     }
@@ -123,7 +123,7 @@
                     $august_total = 0;
                     $august_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$august'  GROUP BY sales_no ";
                     $result_august = $db->query($august_query);
-                    while ($row_august = $result_august->fetchArray()) {
+                    while ($row_august = $result_august->fetch_assoc()) {
                         $august_subtotal = $row_august['total_amount'];
                         $august_total += $august_subtotal;
                     }
@@ -134,7 +134,7 @@
                     $september_total = 0;
                     $september_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$september'  GROUP BY sales_no ";
                     $result_september = $db->query($september_query);
-                    while ($row_september = $result_september->fetchArray()) {
+                    while ($row_september = $result_september->fetch_assoc()) {
                         $september_subtotal = $row_september['total_amount'];
                         $september_total += $september_subtotal;
                     }
@@ -145,7 +145,7 @@
                     $october_total = 0;
                     $october_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$october'  GROUP BY sales_no ";
                     $result_october = $db->query($october_query);
-                    while ($row_october = $result_october->fetchArray()) {
+                    while ($row_october = $result_october->fetch_assoc()) {
                         $october_subtotal = $row_october['total_amount'];
                         $october_total += $october_subtotal;
                     }
@@ -156,7 +156,7 @@
                     $november_total = 0;
                     $november_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$november'  GROUP BY sales_no ";
                     $result_november = $db->query($november_query);
-                    while ($row_november = $result_november->fetchArray()) {
+                    while ($row_november = $result_november->fetch_assoc()) {
                         $november_subtotal = $row_november['total_amount'];
                         $november_total += $november_subtotal;
                     }
@@ -168,7 +168,7 @@
                     $december_total = 0;
                     $december_query = "SELECT * FROM tbl_sales WHERE   strftime('%Y-%m', sales_date) = '$december'  GROUP BY sales_no ";
                     $result_december = $db->query($december_query);
-                    while ($row_december = $result_december->fetchArray()) {
+                    while ($row_december = $result_december->fetch_assoc()) {
                         $december_subtotal = $row_november['total_amount'];
                         $december_total += $december_subtotal;
                     }
