@@ -14,6 +14,7 @@ SELECT
     t.amount,
     t.transaction_date,
     t.remarks,
+    tt.type_name,
 
     m.member_id,
     m.first_name,
@@ -26,6 +27,7 @@ FROM transactions t
 INNER JOIN accounts a ON a.account_id = t.account_id
 INNER JOIN account_types at ON at.account_type_id = a.account_type_id
 INNER JOIN tbl_members m ON m.member_id = a.member_id
+INNER JOIN transaction_types tt ON tt.transaction_type_id = t.transaction_type_id
 
 WHERE t.reference_no = ?
 AND at.type_name = 'savings'
@@ -47,6 +49,35 @@ $member_name = $data['first_name'] . " " . $data['last_name'];
 $amount = $data['amount'];
 $date = date("F d, Y h:i A", strtotime($data['transaction_date']));
 $account_number = $data['account_number'];
+
+// Determine transaction type
+if ($amount > 0) {
+    $transaction_type = "Deposit";
+    $display_amount = number_format($amount, 2);
+} else {
+    $transaction_type = "Withdrawal";
+    $display_amount = number_format(abs($amount), 2); // display positive value
+}
+
+
+$historyResult = $db->query("
+    SELECT details 
+    FROM tbl_history 
+    WHERE history_type = 51
+      AND JSON_UNQUOTE(JSON_EXTRACT(details, '$.reference')) = '$reference_no'
+    LIMIT 1
+");
+
+if ($historyResult && $historyResult->num_rows > 0) {
+
+    $historyRow = $historyResult->fetch_assoc();
+    $details = json_decode($historyRow['details'], true);
+
+    $employee_name = $details['employee'] ?? 'System';
+} else {
+
+    $employee_name = 'System';
+}
 ?>
 
 <!DOCTYPE html>
@@ -54,7 +85,6 @@ $account_number = $data['account_number'];
 
 <head>
     <title>Savings Receipt</title>
-
     <style>
         body {
             font-family: calibri;
@@ -78,8 +108,12 @@ $account_number = $data['account_number'];
             border-top: 1px dashed black;
             margin: 5px 0;
         }
-    </style>
 
+        .type {
+            font-weight: bold;
+            color: <?= $transaction_type == 'Deposit' ? 'green' : 'red' ?>;
+        }
+    </style>
 </head>
 
 <body onload="window.print()">
@@ -88,7 +122,7 @@ $account_number = $data['account_number'];
 
         <div class="text-center">
             <h3>OPOL COMMUNITY COLLEGE <br> EMPLOYEES CREDIT COOPERATIVE</h3>
-            <p>Savings Receipt</p>
+            <p>Receipt</p>
         </div>
 
         <div class="line"></div>
@@ -117,10 +151,13 @@ $account_number = $data['account_number'];
 
         <div class="line"></div>
 
-        <p>Savings Amount:</p>
+        <p>Transaction Type:<br>
+            <span class="type"><?= $transaction_type ?></span>
+        </p>
 
+        <p>Amount:</p>
         <h2 class="text-right">
-            ₱ <?= number_format($amount, 2) ?>
+            ₱ <?= $display_amount ?>
         </h2>
 
         <div class="line"></div>
@@ -129,6 +166,15 @@ $account_number = $data['account_number'];
             Remarks:<br>
             <?= htmlspecialchars($data['remarks']) ?>
         </p>
+
+
+        <div class="line"></div>
+
+        <p>
+            Processed By:<br>
+            <?= htmlspecialchars($employee_name) ?>
+        </p>
+
 
         <br><br>
 

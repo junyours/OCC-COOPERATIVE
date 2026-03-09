@@ -41,6 +41,7 @@
                 <li><a href="receiving-report.php"><i class="icon-dots"></i> Receiving</a></li>
                 <li><a href="loan-report.php"><i class="icon-dots"></i> Loan</a></li>
                 <li><a href="expences-report.php"><i class="icon-dots"></i> Expenses</a></li>
+                <li><a href="financial_report.php"><i class="icon-dots"></i> Fincancial Reports</a></li>
                 <li class="dropdown-submenu">
                     <a href="#"><i class="icon-dots"></i> Product</a>
                     <ul class="dropdown-menu">
@@ -49,6 +50,7 @@
                     </ul>
                 </li>
                 <li><a href="system-history.php"><i class="icon-dots"></i> System History</a></li>
+                <li><a href="pdf_dashboard.php"><i class="icon-dots"></i> PDF Management</a></li>
                 <li><a href="system_settings.php"><i class="icon-cog"></i> System Settings</a></li>
             </ul>
         </li>
@@ -65,7 +67,7 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-right">
                 <li><a href="loan.php"><i class="icon-dots"></i> Loan</a></li>
-                <li><a href="financial.php"><i class="icon-dots"></i> Financial</a></li>
+                <li><a href="alltransactions.php"><i class="icon-dots"></i> Accounting Terminal</a></li>
             </ul>
         </li>
 
@@ -107,7 +109,6 @@
 
     <?php } ?>
 
-
     <?php if ($_SESSION['session_type'] == "member") { ?>
 
         <li>
@@ -120,16 +121,19 @@
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                 <i class="icon-cart position-left"></i> Transactions <span class="caret"></span>
             </a>
+
             <ul class="dropdown-menu dropdown-menu-right">
-                <li><a href="..member/savings.php"><i class="icon-dots"></i>Savings</a></li>
+                <li><a href="../member/savings.php"><i class="icon-dots"></i>Savings</a></li>
                 <li><a href="../member/transaction_history.php"><i class="icon-dots"></i>Transaction History</a></li>
-                <li><a href="loan.php"><i class="icon-dots"></i> Loan</a></li>
-                <!-- <li><a href="soa.php"><i class="icon-dots"></i>SOA</a></li> -->
+
+                <?php if ($_SESSION['member_type'] == "regular") { ?>
+                    <li><a href="loan.php"><i class="icon-dots"></i> Loan</a></li>
+                <?php } ?>
+
             </ul>
         </li>
 
     <?php } ?>
-
 </ul>
 
 <ul class="nav navbar-nav navbar-right">

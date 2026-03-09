@@ -16,18 +16,20 @@ $result_unit = $db->query($unit);
     .navbar-brand {
         display: flex;
         align-items: center;
-        gap: 0px;
         font-weight: 800;
         color: white;
         text-decoration: none;
-        font-size: 50px;
+        font-size: 16px;
+        line-height: 1.2;
     }
 
     .navbar-brand img {
         height: 40px;
         width: auto;
-        object-fit: contain;
+        margin-right: 12px;
+        border-radius: 20px;
     }
+
 
     .navbar-brand span {
         white-space: nowrap;
@@ -79,7 +81,7 @@ $result_unit = $db->query($unit);
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>

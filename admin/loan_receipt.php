@@ -22,7 +22,6 @@ $loanQry = $db->query("
         l.service_charge, 
         l.doc_stamp_fee, 
         l.insurance, 
-        l.require_comaker,
         l.payment_frequency,
         l.released_date,
         f.fund_name,
@@ -313,10 +312,10 @@ while ($row = $scheduleQry->fetch_assoc()) {
             </tr>
         </tbody>
     </table>
-    </table> 
+    </table>
 
 
-    
+
     <!-- <h5>Loan Fund Details</h5>
     <table class="table-loan">
         <thead>

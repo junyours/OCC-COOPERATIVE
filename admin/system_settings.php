@@ -146,17 +146,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['loan_type_id'])) {
     .navbar-brand {
         display: flex;
         align-items: center;
-        gap: 0px;
         font-weight: 800;
         color: white;
         text-decoration: none;
-        font-size: 50px;
+        font-size: 16px;
+        line-height: 1.2;
     }
 
     .navbar-brand img {
         height: 40px;
         width: auto;
-        object-fit: contain;
+        margin-right: 12px;
+        border-radius: 20px;
     }
 
     .navbar-brand span {
@@ -167,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['loan_type_id'])) {
 <body class="layout-boxed navbar-top">
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
         </div>
         <div class="navbar-collapse collapse">
             <?php require('includes/sidebar.php'); ?>

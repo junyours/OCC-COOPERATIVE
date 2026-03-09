@@ -73,22 +73,19 @@ $supplier_result = $db->query($supplier_select);
 $supplier_row = $supplier_result->fetch_assoc();
 $supplier_total = $supplier_row['total_supplier'];
 
-
 $total_savings = 0;
 
 $query = "
-SELECT SUM(t.amount) AS total
+SELECT IFNULL(SUM(t.amount), 0) AS total
 FROM transactions t
 JOIN accounts a ON a.account_id = t.account_id
 JOIN account_types at ON at.account_type_id = a.account_type_id
 WHERE at.type_name = 'savings'
-AND t.transaction_type_id = 1
 ";
 
 $result = $db->query($query);
 $row = $result->fetch_assoc();
-$total_savings = $row['total'] ?? 0;
-
+$total_savings = floatval($row['total']); // deposits - withdrawals
 
 $total_capital_share = 0;
 
@@ -127,22 +124,20 @@ $total_loans_ongoing = $row['total'] ?? 0;
     .navbar-brand {
         display: flex;
         align-items: center;
-        /* vertically center image + text */
-        gap: 0px;
-        /* space between logo and text */
         font-weight: 800;
         color: white;
-        /* adjust to your navbar color */
         text-decoration: none;
-        font-size: 50px;
+        font-size: 16px;
+        line-height: 1.2;
     }
 
     .navbar-brand img {
         height: 40px;
-        /* adjust logo height */
         width: auto;
-        object-fit: contain;
+        margin-right: 12px;
+        border-radius: 20px;
     }
+
 
     .navbar-brand span {
         white-space: nowrap;
@@ -170,7 +165,7 @@ $total_loans_ongoing = $row['total'] ?? 0;
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>

@@ -1994,7 +1994,7 @@ if (isset($_GET['inventory-report'])) {
         $customer = '';
         $all_details = '';
 
-        if ($row['details_type'] == 1) { // Sales
+        if ($row['details_type'] == 1) {
             $queryDetails = "
                 SELECT s.*, p.product_name, p.unit, u.fullname, c.name AS customer_name
                 FROM tbl_sales s
@@ -2727,14 +2727,34 @@ if (isset($_POST['save-loan-application'])) {
         $loan_id = $db->insert_id;
 
         // Check if a co-maker was provided
+        // Check if loan type requires comaker
+        $check = $db->query("
+SELECT require_comaker
+FROM loan_types
+WHERE loan_type_id=$loan_type_id
+LIMIT 1
+")->fetch_assoc();
+
+        $require_comaker = $check['require_comaker'] ?? 0;
+
+        if ($require_comaker == 1 && empty($_POST['comaker_member_id'])) {
+            throw new Exception("This loan type requires a co-maker.");
+        }
+
+        // Insert co-maker
         if (!empty($_POST['comaker_member_id'])) {
+
             $comaker_member_id = (int)$_POST['comaker_member_id'];
 
-            // Insert into comakers table
-            $db->query("
-        INSERT INTO comakers (loan_id, comaker_member_id, status)
-        VALUES ($loan_id, $comaker_member_id, 'pending')
+            $stmt = $db->prepare("
+        INSERT INTO loan_comaker 
+        (loan_id, comaker_member_id, status)
+        VALUES (?, ?, 'pending')
     ");
+
+            $stmt->bind_param("ii", $loan_id, $comaker_member_id);
+
+            $stmt->execute();
         }
 
 
@@ -2765,6 +2785,36 @@ if (isset($_POST['save-loan-application'])) {
         $db->rollback();
         echo "Error: " . $e->getMessage();
     }
+    exit;
+}
+
+if (isset($_POST['search_member'])) {
+
+    require('db_connect.php');
+
+    $search = $db->real_escape_string($_POST['search']);
+    $member_id = (int)$_POST['member_id'];
+
+    $query = $db->query("
+        SELECT member_id,
+        CONCAT(first_name,' ',last_name) AS name
+        FROM tbl_members
+        WHERE type='regular'
+        AND member_id != $member_id
+        AND CONCAT(first_name,' ',last_name) LIKE '%$search%'
+        ORDER BY name ASC
+    ");
+
+    $data = [];
+
+    while ($row = $query->fetch_assoc()) {
+        $data[] = [
+            "id" => $row['member_id'],
+            "text" => $row['name']
+        ];
+    }
+
+    echo json_encode($data);
     exit;
 }
 
@@ -3533,118 +3583,42 @@ function applyLoanPenalty($db, $loan_id)
     }
 }
 
-if (isset($_POST['post_new_transaction'])) {
-    
-    // 1. Basic Inputs
-    $member_id           = intval($_POST['member_id']);
-    $transaction_type_id = intval($_POST['transaction_type_id']);
-    $amount              = floatval($_POST['amount']);
-    $reference_no        = $db->real_escape_string($_POST['reference_no']);
-    $transaction_date    = $_POST['transaction_date'];
-    $remarks             = $db->real_escape_string($_POST['remarks']);
-    
-    // Optional Inputs (for Loans)
-    $schedule_id         = isset($_POST['schedule_id']) ? intval($_POST['schedule_id']) : 0;
-    $loan_id             = isset($_POST['loan_id']) ? intval($_POST['loan_id']) : 0;
-    
-    // Session Data
-    $user_id  = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
-    $fullname = isset($_SESSION['fullname']) ? $db->real_escape_string($_SESSION['fullname']) : "System";
+// // Standard Transaction Handler (Savings, Share Capital, etc.)
+// if (isset($_POST['post_new_transaction'])) {
+//     require('db_connect.php');
 
-    if ($member_id <= 0 || $amount <= 0) {
-        die("Invalid input data.");
-    }
 
-    $db->begin_transaction();
+//     $type_id = (int)$_POST['transaction_type_id'];
 
-    try {
-        $account_id = 0;
+//     // If it's a LOAN PAYMENT (Assuming ID 5 based on your logic), 
+//     // we redirect the data to your existing 'save-loan-payments' logic
+//     if ($type_id == 5) {
+//         $_POST['save-loan-payments'] = 1;
+//         $_POST['amount_paid'] = $_POST['amount']; // Match variable names
+//         // The script continues to the loan payment block below
+//     } else {
+//         // Handle normal Deposit/Withdrawal
+//         $account_id = (int)$_POST['account_id'];
+//         $amount = floatval($_POST['amount']);
+//         $ref = $db->real_escape_string($_POST['reference_no']);
+//         $remarks = $db->real_escape_string($_POST['remarks']);
+//         $date = $_POST['transaction_date'];
 
-        // 2. Logic to Determine/Create Account based on Transaction Type
-        // We fetch the type name to decide if we need to auto-create 'savings' or 'capital_share'
-        $tTypeQuery = $db->query("SELECT type_name FROM transaction_types WHERE transaction_type_id = $transaction_type_id");
-        $tTypeRow   = $tTypeQuery->fetch_assoc();
-        $tTypeName  = $tTypeRow['type_name'];
+//         $db->begin_transaction();
+//         try {
+//             $stmt = $db->prepare("INSERT INTO transactions (account_id, transaction_type_id, amount, reference_no, remarks, transaction_date, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+//             $stmt->bind_param("iidsss", $account_id, $type_id, $amount, $ref, $remarks, $date);
+//             $stmt->execute();
 
-        if ($tTypeName == 'capital_share' || $tTypeName == 'savings') {
-            // Check if account exists, if not create it (matching your previous logic)
-            $accTypeQuery = $db->query("SELECT account_type_id FROM account_types WHERE type_name = '$tTypeName'");
-            $accType      = $accTypeQuery->fetch_assoc();
-            $atid         = $accType['account_type_id'];
-
-            $checkAcc = $db->prepare("SELECT account_id FROM accounts WHERE member_id = ? AND account_type_id = ? LIMIT 1");
-            $checkAcc->bind_param("ii", $member_id, $atid);
-            $checkAcc->execute();
-            $resAcc = $checkAcc->get_result();
-
-            if ($resAcc->num_rows > 0) {
-                $account_id = $resAcc->fetch_assoc()['account_id'];
-            } else {
-                $prefix = ($tTypeName == 'savings') ? 'SAV-' : 'CAP-';
-                $acc_num = $prefix . $member_id . '-' . time();
-                $insAcc = $db->prepare("INSERT INTO accounts (member_id, account_type_id, account_number) VALUES (?, ?, ?)");
-                $insAcc->bind_param("iis", $member_id, $atid, $acc_num);
-                $insAcc->execute();
-                $account_id = $insAcc->insert_id;
-            }
-        } else {
-            // For other types (Loan Payment, etc.), use the account_id passed from the dropdown
-            $account_id = intval($_POST['account_id']);
-        }
-
-        if ($account_id <= 0) throw new Exception("Target account could not be determined.");
-
-        // 3. Insert into Main Transactions Table
-        $stmt = $db->prepare("INSERT INTO transactions (account_id, transaction_type_id, amount, reference_no, remarks, transaction_date) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iidsss", $account_id, $transaction_type_id, $amount, $reference_no, $remarks, $transaction_date);
-        if (!$stmt->execute()) throw new Exception("Failed to save transaction.");
-        $transaction_id = $stmt->insert_id;
-
-        // 4. Specific Logic for Loan Payments (Type ID 5)
-        if ($transaction_type_id == 5 && $schedule_id > 0) {
-            $sched_res = $db->query("SELECT * FROM loan_schedule WHERE schedule_id = $schedule_id");
-            $sched = $sched_res->fetch_assoc();
-            
-            if ($sched) {
-                $stmt_pay = $db->prepare("INSERT INTO loan_payments (loan_id, schedule_id, account_id, amount_paid, principal_paid, interest_paid, penalty_paid, payment_date, reference_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                
-                // Distribute payment based on schedule
-                $p_paid = $sched['principal_due'];
-                $i_paid = $sched['interest_due'];
-                $pen_paid = $sched['penalty_due'];
-
-                $stmt_pay->bind_param("iiiddddss", $loan_id, $schedule_id, $account_id, $amount, $p_paid, $i_paid, $pen_paid, $transaction_date, $reference_no);
-                $stmt_pay->execute();
-
-                // Update Schedule to Paid
-                $db->query("UPDATE loan_schedule SET status = 'paid' WHERE schedule_id = $schedule_id");
-            }
-        }
-
-        // 5. History Logging
-        $history_type = ($tTypeName == 'capital_share') ? 50 : (($tTypeName == 'savings') ? 51 : 52);
-        $detailsArray = [
-            'member_id'  => $member_id,
-            'account_id' => $account_id,
-            'amount'     => $amount,
-            'reference'  => $reference_no,
-            'type'       => $tTypeName,
-            'user_id'    => $user_id,
-            'employee'   => $fullname,
-            'date'       => $transaction_date
-        ];
-        $detailsJson = $db->real_escape_string(json_encode($detailsArray));
-        $db->query("INSERT INTO tbl_history (details, history_type, field_status) VALUES ('$detailsJson', $history_type, 0)");
-
-        $db->commit();
-        header("Location: admin/new_transaction.php?success=1");
-
-    } catch (Exception $e) {
-        $db->rollback();
-        echo "Error: " . $e->getMessage();
-    }
-    exit;
-}
+//             $db->commit();
+//             echo json_encode(["success" => true]);
+//         } catch (Exception $e) {
+//             $db->rollback();
+//             echo json_encode(["success" => false, "message" => $e->getMessage()]);
+//         }
+//         exit;
+//     }
+// }
 
 
 if (isset($_POST['save-loan-payments'])) {
@@ -3786,22 +3760,22 @@ if (isset($_POST['save-loan-payments'])) {
 
                 $extra = $remaining;
 
-                // Apply extra payment to principal first
+
                 $principal_payment = min($extra, $principal);
                 $principal -= $principal_payment;
                 $extra -= $principal_payment;
 
-                // If extra still left, apply to interest
+
                 $interest_payment = min($extra, $interest);
                 $interest -= $interest_payment;
                 $extra -= $interest_payment;
 
-                // If extra still left, apply to penalty
+
                 $penalty_payment = min($extra, $penalty);
                 $penalty -= $penalty_payment;
                 $extra -= $penalty_payment;
 
-                $remaining = $extra; // update remaining for next schedule
+                $remaining = $extra;
 
                 $total_due = $principal + $interest + $penalty;
                 $sched_status = ($total_due <= 0) ? 'paid' : 'ongoing';
@@ -3818,7 +3792,7 @@ if (isset($_POST['save-loan-payments'])) {
             }
         }
 
-        // ---------------- INSERT TRANSACTION ----------------
+
         $stmt3 = $db->prepare("
             INSERT INTO transactions
             (account_id, transaction_type_id, amount, reference_no, remarks, transaction_date, created_at)
@@ -3829,7 +3803,7 @@ if (isset($_POST['save-loan-payments'])) {
         $stmt3->bind_param("iidsss", $account_id, $type, $amount_paid, $reference, $remarks, $payment_date);
         $stmt3->execute();
 
-        // ---------------- INSERT HISTORY ----------------
+
         $json = json_encode([
             "loan_id"   => $loan_id,
             "reference" => $reference,
@@ -3843,7 +3817,7 @@ if (isset($_POST['save-loan-payments'])) {
         $stmt4->bind_param("s", $json);
         $stmt4->execute();
 
-        // ---------------- CHECK IF LOAN FULLY PAID ----------------
+
         $balQry = $db->query("
             SELECT SUM(principal_due + interest_due + penalty_due)
             - (SELECT IFNULL(SUM(principal_paid + interest_paid + penalty_paid),0) 
@@ -3855,14 +3829,14 @@ if (isset($_POST['save-loan-payments'])) {
 
         if ($bal <= 0) {
 
-            // mark loan as paid
+
             $db->query("
         UPDATE loans
         SET status='paid'
         WHERE loan_id=$loan_id
     ");
 
-            // mark ALL schedules as paid
+
             $db->query("
         UPDATE loan_schedule
         SET 
@@ -3913,7 +3887,7 @@ if (isset($_POST['view_capital_receipt'])) {
     exit;
 }
 
-// === ADD LOAN TYPE HANDLER ===
+
 if (isset($_POST['add_loan_type'])) {
     require('db_connect.php');
 
@@ -4012,7 +3986,6 @@ if (isset($_POST['save-capital-share'])) {
             ");
 
             $stmt->bind_param("iis", $member_id, $account_type_id, $account_number);
-            $stmt->execute();
 
             $account_id = intval($stmt->insert_id);
 
@@ -4022,8 +3995,8 @@ if (isset($_POST['save-capital-share'])) {
         }
 
 
+        $reference = 'CS-' . str_pad($account_id, 6, '0', STR_PAD_LEFT) . '-' . date('ymd') . '-' . strtoupper(substr(md5(microtime()), 0, 4));
 
-        $reference = 'CS-' . str_pad($account_id, 6, '0', STR_PAD_LEFT) . '-' . date('ymd');
 
 
 
@@ -4178,7 +4151,8 @@ if (isset($_POST['save-savings'])) {
             }
         }
 
-        $reference = 'SAV-' . str_pad($account_id, 6, '0', STR_PAD_LEFT) . '-' . date('ymd');
+
+        $reference = 'SAV-' . str_pad($account_id, 6, '0', STR_PAD_LEFT) . '-' . date('ymd') . '-' . strtoupper(substr(md5(microtime()), 0, 4));
 
 
         $typeQuery = $db->query("
@@ -4246,6 +4220,208 @@ if (isset($_POST['save-savings'])) {
 }
 
 
+/* =========================================================
+   REQUEST WITHDRAWAL
+========================================================= */
+if (isset($_POST['action_type']) && $_POST['action_type'] === 'request_withdrawal') {
+    require('db_connect.php');
+
+    $account_id = intval($_POST['account_id'] ?? 0);
+    $amount     = floatval($_POST['amount'] ?? 0);
+    $reason     = trim($_POST['reason'] ?? '');
+
+    if ($account_id <= 0 || $amount <= 0 || empty($reason)) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid input']);
+        exit;
+    }
+
+    $stmt = $db->prepare("
+        INSERT INTO savings_withdrawal_requests
+        (account_id, amount, reason, status, date_requested)
+        VALUES (?, ?, ?, 'pending', NOW())
+    ");
+
+    if (!$stmt) {
+        echo json_encode(['status' => 'error', 'message' => $db->error]);
+        exit;
+    }
+
+    $stmt->bind_param("ids", $account_id, $amount, $reason);
+
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Request submitted']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => $stmt->error]);
+    }
+
+    $stmt->close();
+    exit;
+}
+
+/* =========================================================
+   APPROVE WITHDRAWAL (store negative amounts and sync reference)
+========================================================= */
+if (isset($_POST['action_type']) && $_POST['action_type'] === 'approve_withdrawal') {
+    require('db_connect.php');
+
+    $request_id  = intval($_POST['request_id'] ?? 0);
+    $approved_by = $_SESSION['user_id'] ?? 0;
+
+    if ($request_id <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+        exit;
+    }
+
+    $db->begin_transaction();
+
+    try {
+        /* -----------------------------
+           Step 1: Get Request Info
+        ----------------------------- */
+        $stmt = $db->prepare("
+            SELECT account_id, amount, reason, remarks
+            FROM savings_withdrawal_requests
+            WHERE request_id = ? AND status = 'pending'
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $request_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $req = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!$req) {
+            throw new Exception("Invalid or already processed request.");
+        }
+
+        $account_id = intval($req['account_id']);
+        $amount     = floatval($req['amount']);
+        $remarks    = $req['remarks'] ?: ($req['reason'] ?: 'Withdrawal approved');
+
+        /* -----------------------------
+           Step 2: Check Current Balance
+        ----------------------------- */
+        $stmt = $db->prepare("
+            SELECT IFNULL(SUM(
+                CASE 
+                    WHEN tt.type_name IN ('deposit','capital_share','loan_release') THEN t.amount
+                    WHEN tt.type_name = 'withdrawal' THEN t.amount
+                    ELSE 0
+                END
+            ),0) AS balance
+            FROM transactions t
+            JOIN transaction_types tt ON t.transaction_type_id = tt.transaction_type_id
+            WHERE t.account_id = ?
+        ");
+        $stmt->bind_param("i", $account_id);
+        $stmt->execute();
+        $balance = $stmt->get_result()->fetch_assoc()['balance'];
+        $stmt->close();
+
+        if ($balance < $amount) {
+            throw new Exception("Insufficient savings balance. Current: ₱$balance, Requested: ₱$amount");
+        }
+
+        /* -----------------------------
+           Step 3: Get Withdrawal Type ID
+        ----------------------------- */
+        $type_q = $db->query("
+            SELECT transaction_type_id 
+            FROM transaction_types 
+            WHERE type_name = 'withdrawal'
+            LIMIT 1
+        ");
+        $type = $type_q->fetch_assoc();
+        if (!$type) {
+            throw new Exception("Withdrawal transaction type not found.");
+        }
+        $type_id = intval($type['transaction_type_id']);
+
+        /* -----------------------------
+           Step 4: Generate Reference Number
+        ----------------------------- */
+        $reference_no = 'WD-' . str_pad($account_id, 6, '0', STR_PAD_LEFT) . '-' . date('ymd') . '-' . strtoupper(substr(md5(microtime()), 0, 4));
+
+        /* -----------------------------
+           Step 5: Insert Transaction (negative amount)
+        ----------------------------- */
+        $amount_to_insert = -1 * $amount; // store as negative
+
+        $stmt = $db->prepare("
+            INSERT INTO transactions
+            (account_id, transaction_type_id, amount, reference_no, remarks, transaction_date, created_at)
+            VALUES (?, ?, ?, ?, ?, CURDATE(), NOW())
+        ");
+        $stmt->bind_param("iidss", $account_id, $type_id, $amount_to_insert, $reference_no, $remarks);
+        $stmt->execute();
+        $stmt->close();
+
+        /* -----------------------------
+           Step 6: Update Withdrawal Request
+           (store same reference_no as transaction)
+        ----------------------------- */
+        $stmt = $db->prepare("
+            UPDATE savings_withdrawal_requests
+            SET status = 'approved',
+                approved_by = ?,
+                date_approved = NOW(),
+                reference_no = ?
+            WHERE request_id = ?
+        ");
+        $stmt->bind_param("isi", $approved_by, $reference_no, $request_id);
+        $stmt->execute();
+        $stmt->close();
+
+        /* -----------------------------
+           Step 7: Commit Transaction
+        ----------------------------- */
+        $db->commit();
+
+        echo json_encode([
+            'status' => 'success',
+            'reference_no' => $reference_no
+        ]);
+    } catch (Exception $e) {
+        $db->rollback();
+        echo json_encode([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ]);
+    }
+
+    exit;
+}
+/* =========================================================
+   REJECT WITHDRAWAL
+========================================================= */
+if (isset($_POST['action_type']) && $_POST['action_type'] === 'reject_withdrawal') {
+    require('db_connect.php');
+
+    $request_id = intval($_POST['request_id'] ?? 0);
+    $approved_by = $_SESSION['user_id'] ?? 0;
+
+    if ($request_id <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+        exit;
+    }
+
+    $stmt = $db->prepare("
+        UPDATE savings_withdrawal_requests
+        SET status = 'rejected',
+            approved_by = ?,
+            date_approved = NOW()
+        WHERE request_id = ?
+        AND status = 'pending'
+    ");
+    $stmt->bind_param("ii", $approved_by, $request_id);
+    $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(['status' => 'success']);
+    exit;
+}
+
+
 
 // ----------------------------
 // Save Distribution Cycle
@@ -4265,10 +4441,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 
     $stmt_check = $db->prepare("
-        SELECT COUNT(*) AS cnt 
-        FROM distribution_cycles 
-        WHERE YEAR(created_at) = ?
-    ");
+SELECT COUNT(*) AS cnt
+FROM distribution_cycles
+WHERE YEAR(created_at) = ?
+");
     $stmt_check->bind_param("i", $year);
     $stmt_check->execute();
     $res_check = $stmt_check->get_result()->fetch_assoc();
@@ -4284,19 +4460,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     try {
 
         $stmt = $db->prepare("
-            INSERT INTO distribution_cycles (dividend_amount, patronage_amount)
-            VALUES (?, ?)
-        ");
+INSERT INTO distribution_cycles (dividend_amount, patronage_amount)
+VALUES (?, ?)
+");
         $stmt->bind_param("dd", $dividend_amount, $patronage_amount);
         $stmt->execute();
         $cycle_id = $db->insert_id;
 
 
         $stmt = $db->prepare("
-            INSERT INTO distribution_records
-            (cycle_id, cust_id, share_capital, total_purchases, dividend, patronage, total_benefit)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
+INSERT INTO distribution_records
+(cycle_id, cust_id, share_capital, total_purchases, dividend, patronage, total_benefit)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+");
 
         foreach ($members as $m) {
             $stmt->bind_param(
@@ -4328,13 +4504,13 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_distribution_records') 
     $cycle_id = intval($_POST['cycle_id']);
 
     $stmt = $db->prepare("
-        SELECT dr.*, c.name AS customer_name,
-               dd.amount_disbursed, dd.payment_method, dd.reference_no, dd.disbursed_at, dd.remarks
-        FROM distribution_records dr
-        JOIN tbl_customer c ON c.cust_id = dr.cust_id
-        LEFT JOIN distribution_disbursements dd ON dd.record_id = dr.id
-        WHERE dr.cycle_id = ?
-    ");
+SELECT dr.*, c.name AS customer_name,
+dd.amount_disbursed, dd.payment_method, dd.reference_no, dd.disbursed_at, dd.remarks
+FROM distribution_records dr
+JOIN tbl_customer c ON c.cust_id = dr.cust_id
+LEFT JOIN distribution_disbursements dd ON dd.record_id = dr.id
+WHERE dr.cycle_id = ?
+");
     $stmt->bind_param("i", $cycle_id);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -4373,10 +4549,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'save_disbursement') {
     $disbursed_at = date('Y-m-d H:i:s');
 
     $stmt = $db->prepare("
-        INSERT INTO distribution_disbursements
-        (record_id, cust_id, cycle_id, amount_disbursed, payment_method, reference_no, disbursed_by, disbursed_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ");
+INSERT INTO distribution_disbursements
+(record_id, cust_id, cycle_id, amount_disbursed, payment_method, reference_no, disbursed_by, disbursed_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+");
     $stmt->bind_param(
         "iiiissis",
         $record_id,
@@ -4402,5 +4578,150 @@ if (isset($_POST['action']) && $_POST['action'] === 'save_disbursement') {
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to save disbursement.']);
     }
+    exit;
+}
+
+
+if (isset($_POST['action_type']) && $_POST['action_type'] === 'void_transaction') {
+
+    require('db_connect.php');
+
+    $transaction_id = intval($_POST['transaction_id'] ?? 0);
+    $reason         = trim($_POST['reason'] ?? '');
+    $voided_by      = $_SESSION['user_id'] ?? 0;
+
+    if ($transaction_id <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid transaction']);
+        exit;
+    }
+
+    $db->begin_transaction();
+
+    try {
+
+        /* -----------------------------
+           Step 1: Get Original Transaction
+        ----------------------------- */
+        $stmt = $db->prepare("
+            SELECT *
+            FROM transactions
+            WHERE transaction_id = ?
+            AND status = 'active'
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $transaction_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $trx = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!$trx) {
+            throw new Exception("Transaction not found or already voided.");
+        }
+
+        $account_id = $trx['account_id'];
+        $type_id    = $trx['transaction_type_id'];
+        $amount     = $trx['amount'];
+        $reference  = $trx['reference_no'];
+
+        /* -----------------------------
+           Step 2: Create Reversal Transaction
+           Reverse the amount
+        ----------------------------- */
+        $reverse_amount = -1 * $amount;
+
+        $reverse_reference = "VOID-" . $reference;
+
+        $stmt = $db->prepare("
+            INSERT INTO transactions
+            (account_id, transaction_type_id, amount, reference_no, remarks, transaction_date, created_at, reversed_transaction_id)
+            VALUES (?, ?, ?, ?, ?, CURDATE(), NOW(), ?)
+        ");
+
+        $remarks = "Reversal of $reference";
+        $stmt->bind_param(
+            "iidssi",
+            $account_id,
+            $type_id,
+            $reverse_amount,
+            $reverse_reference,
+            $remarks,
+            $transaction_id
+        );
+        $stmt->execute();
+        $stmt->close();
+
+        /* -----------------------------
+           Step 3: Mark Original as Voided
+        ----------------------------- */
+        $stmt = $db->prepare("
+            UPDATE transactions
+            SET status = 'voided',
+                voided_at = NOW(),
+                voided_by = ?,
+                void_reason = ?
+            WHERE transaction_id = ?
+        ");
+        $stmt->bind_param("isi", $voided_by, $reason, $transaction_id);
+        $stmt->execute();
+        $stmt->close();
+
+        /* -----------------------------
+           Step 4: Special Handling (Important!)
+        ----------------------------- */
+
+        // If loan payment → reverse loan_schedule
+        if ($type_id == 5) { // loan payment type id
+
+            $db->query("
+                UPDATE loan_schedule
+                SET status='ongoing'
+                WHERE loan_id IN (
+                    SELECT loan_id FROM loan_payments WHERE reference_no='$reference'
+                )
+            ");
+
+            $db->query("
+                DELETE FROM loan_payments
+                WHERE reference_no='$reference'
+            ");
+
+            $db->query("
+                UPDATE loans SET status='ongoing'
+                WHERE loan_id IN (
+                    SELECT loan_id FROM loan_schedule WHERE reference_no='$reference'
+                )
+            ");
+        }
+
+        /* -----------------------------
+           Step 5: Log History
+        ----------------------------- */
+        $details = json_encode([
+            'voided_transaction_id' => $transaction_id,
+            'reference' => $reference,
+            'reason' => $reason,
+            'voided_by' => $voided_by,
+            'date' => date("Y-m-d H:i:s")
+        ]);
+
+        $db->query("
+            INSERT INTO tbl_history
+            (details, history_type, field_status)
+            VALUES ('$details', 99, 0)
+        ");
+
+        $db->commit();
+
+        echo json_encode(['status' => 'success']);
+    } catch (Exception $e) {
+
+        $db->rollback();
+        echo json_encode([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ]);
+    }
+
     exit;
 }

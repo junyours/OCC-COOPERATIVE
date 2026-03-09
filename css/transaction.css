@@ -1,28 +1,23 @@
-   .navbar-brand {
-                display: flex;
-                align-items: center;
+.navbar-brand {
+        display: flex;
+        align-items: center;
+        font-weight: 800;
+        color: white;
+        text-decoration: none;
+        font-size: 16px;
+        line-height: 1.2;
+    }
 
-                gap: 0px;
+    .navbar-brand img {
+        height: 40px;
+        width: auto;
+        margin-right: 12px;
+        border-radius: 20px;
+    }
 
-                font-weight: 800;
-                color: white;
-
-                text-decoration: none;
-                font-size: 50px;
-            }
-
-            .navbar-brand img {
-                height: 40px;
-
-                width: auto;
-                object-fit: contain;
-            }
-
-            .navbar-brand span {
-                white-space: nowrap;
-
-            }
-
+    .navbar-brand span {
+        white-space: nowrap;
+    }
 
             @media (max-width:768px) {
                 .content-wrapper {

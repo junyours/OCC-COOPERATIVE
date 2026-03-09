@@ -113,12 +113,37 @@ $savings_total = $db->query("
 ?>
 
 <link rel="stylesheet" href="../css/mobile-dashboard.css">
+<style>
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+        font-weight: 800;
+        color: white;
+        text-decoration: none;
+        font-size: 16px;
+        line-height: 1.2;
+    }
+
+    .navbar-brand img {
+        height: 40px;
+        width: auto;
+        margin-right: 12px;
+        border-radius: 20px;
+    }
+
+
+
+    .navbar-brand span {
+        white-space: nowrap;
+        /* prevent text from wrapping to next line */
+    }
+</style>
 
 <body class="layout-boxed navbar-top">
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+            <a class="navbar-brand" href="dashboard.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>
@@ -167,21 +192,6 @@ $savings_total = $db->query("
             </div>
 
 
-            <div class="mobile-stats">
-                <div class="stat-card">
-                    <small>Sales</small>
-                    <h3><?= $total_sales ?></h3>
-                </div>
-                <div class="stat-card">
-                    <small>Members</small>
-                    <h3><?= $customer_total ?></h3>
-                </div>
-                <div class="stat-card">
-                    <small>Suppliers</small>
-                    <h3><?= $supplier_total ?></h3>
-                </div>
-            </div>
-
 
 
             <div class="mobile-actions">
@@ -211,7 +221,7 @@ $savings_total = $db->query("
             </div>
 
 
-            <div class="mobile-commercial">
+            <!-- <div class="mobile-commercial">
 
                 <div class="commercial-header">
                     Promotions
@@ -243,12 +253,12 @@ $savings_total = $db->query("
                         </div>
                     </div>
 
-                </div>
-
-            </div>
-
+                </div> -->
 
         </div>
+
+
+    </div>
 
 
     </div>

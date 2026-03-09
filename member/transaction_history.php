@@ -158,7 +158,7 @@
             <!-- NAVBAR -->
             <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+                    <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
                     <ul class="nav navbar-nav visible-xs-block">
                         <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
                     </ul>
@@ -184,7 +184,7 @@
                     /* Capital Share */
                     $capital_feed = $db->query("
             SELECT 
-                t.transaction_date AS datetime,
+                 t.created_at AS datetime,
                 t.amount,
                 'Capital Share' AS type,
                 t.reference_no AS ref_no
@@ -198,7 +198,7 @@
                     /* Savings Deposit and Withdrawal */
                     $savings_feed = $db->query("
             SELECT 
-                t.transaction_date AS datetime,
+                t.created_at AS datetime,
                 t.amount,
                 CASE
                     WHEN t.amount >= 0 THEN 'Savings Deposit'
@@ -615,97 +615,89 @@
                                                 <div class="tab-pane" id="savings">
                                                     <div class="panel panel-white border-top-xlg border-top-teal-400">
                                                         <div class="panel-heading">
-                                                            <h6 class="panel-title"><i class="icon-wallet position-left text-teal-400"></i> Savings (<?= $year; ?>)</h6>
+                                                            <h6 class="panel-title">
+                                                                <i class="icon-wallet position-left text-teal-400"></i> Savings (<?= $year; ?>)
+                                                            </h6>
                                                         </div>
                                                         <div class="panel-body">
                                                             <table class="table table-bordered table-hover">
+                                                                <thead>
+                                                                    <tr style="background:#eee">
+                                                                        <th>Reference</th>
+                                                                        <th>Date</th>
+                                                                        <th class="text-right text-success">Credit</th>
+                                                                        <th class="text-right text-danger">Debit</th>
+                                                                        <th class="text-right">Balance</th>
+                                                                    </tr>
                                                                 </thead>
-                                                                <tr style="background:#eee">
-
-                                                                    <th>Reference</th>
-                                                                    <th>Date</th>
-                                                                    <th class="text-right text-success">Credit</th>
-                                                                    <th class="text-right text-danger">Debit</th>
-                                                                    <th class="text-right">Balance</th>
-
-                                                                </tr>
-                                                                </?thead>
                                                                 <tbody>
                                                                     <?php
                                                                     $balance = 0;
+                                                                    $transactions = [];
 
+                                                                    // Fetch all savings transactions (oldest first for correct balance)
                                                                     $savings_result = $db->query("
-                                                                        SELECT 
-                                                                            t.transaction_date,
-                                                                            t.amount,
-                                                                            t.reference_no,
-                                                                            tt.type_name
-                                                                        FROM transactions t
-                                                                        INNER JOIN accounts a 
-                                                                            ON a.account_id = t.account_id
-                                                                        INNER JOIN account_types at 
-                                                                            ON at.account_type_id = a.account_type_id
-                                                                        INNER JOIN transaction_types tt
-                                                                            ON tt.transaction_type_id = t.transaction_type_id
-                                                                        WHERE a.member_id = $member_id
-                                                                        AND at.type_name = 'savings'
-                                                                              AND DATE(t.transaction_date)
-                                                                               BETWEEN '$date_from' AND '$date_to'
-                                                                        ORDER BY t.transaction_date DESC, t.transaction_id DESC
-                                                                    ");
+                        SELECT 
+                            t.transaction_date,
+                            t.amount,
+                            t.reference_no,
+                            tt.type_name,
+                            t.transaction_id,
+                            t.created_at
+                        FROM transactions t
+                        INNER JOIN accounts a 
+                            ON a.account_id = t.account_id
+                        INNER JOIN account_types at 
+                            ON at.account_type_id = a.account_type_id
+                        INNER JOIN transaction_types tt
+                            ON tt.transaction_type_id = t.transaction_type_id
+                        WHERE a.member_id = $member_id
+                          AND at.type_name = 'savings'
+                          AND YEAR(t.transaction_date) = $year
+                        ORDER BY t.created_at ASC, t.transaction_id ASC
+                    ");
+
                                                                     if ($savings_result->num_rows > 0) {
+                                                                        // Calculate running balance first
                                                                         while ($s = $savings_result->fetch_assoc()) {
-                                                                            $reference = htmlspecialchars($s['reference_no']);
-                                                                            $date = date('M d, Y', strtotime($s['transaction_date']));
-                                                                            $amount = floatval($s['amount']);
-                                                                            $credit = '';
-                                                                            $debit = '';
-                                                                            if ($s['type_name'] == 'deposit') {
+                                                                            $amount = floatval($s['amount']); // negative for withdrawal
+                                                                            $balance += $amount;
 
-                                                                                $credit = number_format($amount, 2);
-                                                                                $balance += $amount;
-                                                                            } elseif ($s['type_name'] == 'withdrawal') {
+                                                                            $transactions[] = [
+                                                                                'reference' => htmlspecialchars($s['reference_no']),
+                                                                                'date'      => date('M d, Y', strtotime($s['transaction_date'])),
+                                                                                'credit'    => $amount > 0 ? number_format($amount, 2) : '',
+                                                                                'debit'     => $amount < 0 ? number_format(abs($amount), 2) : '',
+                                                                                'balance'   => number_format($balance, 2),
+                                                                            ];
+                                                                        }
 
-                                                                                $debit = number_format($amount, 2);
-                                                                                $balance -= $amount;
-                                                                            }
+                                                                        // Reverse to show latest first
+                                                                        $transactions = array_reverse($transactions);
+
+                                                                        // Display
+                                                                        foreach ($transactions as $t) {
                                                                             echo "
-                                                                            <tr>
-                                                                                <td>
-                                                                                    <a href='javascript:void(0);'
-                                                                                    onclick='view_savings_receipt(this)'
-                                                                                    data-reference='{$reference}'
-                                                                                    style='font-weight:600; color:#26a69a;'>
-                                                                                    {$reference}
-                                                                                    </a>
-                                                                                </td>
-
-                                                                                <td>{$date}</td>
-
-                                                                                <td class='text-right text-success'>
-                                                                                    " . ($credit ? "₱{$credit}" : "") . "
-                                                                                </td>
-
-                                                                                <td class='text-right text-danger'>
-                                                                                    " . ($debit ? "₱{$debit}" : "") . "
-                                                                                </td>
-
-                                                                                <td class='text-right'>
-                                                                                    ₱" . number_format($balance, 2) . "
-                                                                                </td>
-
-                                                                            </tr>
-                                                                            ";
+                            <tr>
+                                <td>
+                                    <a href='javascript:void(0);'
+                                       onclick='view_savings_receipt(this)'
+                                       data-reference='{$t['reference']}'
+                                       style='font-weight:600; color:#26a69a;'>{$t['reference']}</a>
+                                </td>
+                                <td>{$t['date']}</td>
+                                <td class='text-right text-success'>" . ($t['credit'] ? "₱{$t['credit']}" : "") . "</td>
+                                <td class='text-right text-danger'>" . ($t['debit'] ? "₱{$t['debit']}" : "") . "</td>
+                                <td class='text-right'>₱{$t['balance']}</td>
+                            </tr>
+                            ";
                                                                         }
                                                                     } else {
-
                                                                         echo "
-                                                                        <tr>
-                                                                            <td colspan='5' class='text-center'>
-                                                                                No savings found for {$year}.
-                                                                            </td>
-                                                                        </tr>
-                                                                        ";
+                        <tr>
+                            <td colspan='5' class='text-center'>No savings found for {$year}.</td>
+                        </tr>
+                        ";
                                                                     }
                                                                     ?>
                                                                 </tbody>

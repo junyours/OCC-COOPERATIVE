@@ -40,7 +40,7 @@ if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {
 	<link rel="manifest" href="/manifest.json">
 	<meta name="theme-color" content="#004aad">
 	<link rel="apple-touch-icon" href="/assets/icons/your_logo.png">
-
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<title>OCC Cooperative</title>
 
 	<!-- Global stylesheets -->

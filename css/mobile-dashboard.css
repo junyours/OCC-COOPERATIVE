@@ -1,24 +1,23 @@
 
-    .navbar-brand {
+      .navbar-brand {
         display: flex;
         align-items: center;
-        /* vertically center image + text */
-        gap: 0px;
-        /* space between logo and text */
         font-weight: 800;
         color: white;
-        /* adjust to your navbar color */
         text-decoration: none;
-        font-size: 50px;
+        font-size: 16px;
+        line-height: 1.2;
     }
 
     .navbar-brand img {
         height: 40px;
-        /* adjust logo height */
         width: auto;
-        object-fit: contain;
+        margin-right: 12px;
+        border-radius: 20px;
     }
 
+
+    
     .navbar-brand span {
         white-space: nowrap;
         /* prevent text from wrapping to next line */

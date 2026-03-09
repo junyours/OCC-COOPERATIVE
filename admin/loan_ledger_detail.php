@@ -30,22 +30,20 @@ $member_name = $loan['first_name'] . ' ' . $loan['last_name'];
     .navbar-brand {
         display: flex;
         align-items: center;
-        /* vertically center image + text */
-        gap: 0px;
-        /* space between logo and text */
         font-weight: 800;
         color: white;
-        /* adjust to your navbar color */
         text-decoration: none;
-        font-size: 50px;
+        font-size: 16px;
+        line-height: 1.2;
     }
 
     .navbar-brand img {
         height: 40px;
-        /* adjust logo height */
         width: auto;
-        object-fit: contain;
+        margin-right: 12px;
+        border-radius: 20px;
     }
+
 
     .navbar-brand span {
         white-space: nowrap;
@@ -85,7 +83,7 @@ $member_name = $loan['first_name'] . ' ' . $loan['last_name'];
     <!-- Main navbar -->
     <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img style="height: 45px!important" src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
                 <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
             </ul>
