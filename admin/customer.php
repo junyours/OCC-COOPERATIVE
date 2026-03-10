@@ -208,52 +208,145 @@ $result = $db->query($query);
 </body>
 <?php require('includes/footer.php'); ?>
 
-<div id="modal_new" class="modal fade">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
 
-            <form action="#" id="form-customer" class="form-horizontal" role="form"> <input type="hidden" name="save-customer"> <!-- HEADER -->
-                <div class="modal-header bg-teal"> <button type="button" class="close text-white" data-dismiss="modal"> &times; </button>
-                    <h5 class="modal-title"> <i class="icon-user-plus"></i> Register New Member </h5>
-                </div> <!-- BODY -->
-                <div class="modal-body"> <!-- NAME -->
-                    <div class="row">
-                        <div class="col-md-6"> <label>First Name</label> <input class="form-control input-lg" name="first_name" required> </div>
-                        <div class="col-md-6"> <label>Last Name</label> <input class="form-control input-lg" name="last_name" required> </div>
+<div id="modal_new" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-teal-400">
+                <h5 class="modal-title">Register New Member</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-customer" class="form-horizontal" data-toggle="validator" role="form">
+                    <input type="hidden" name="save-customer">
+                    <div class="form-body" style="padding-top:20px">
+                        <div id="add-msg"></div>
+
+                        <!-- Name Fields -->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">First Name</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-user"></i></span>
+                                    <input type="text" class="form-control" name="first_name" placeholder="First Name" required>
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Middle Name</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-user"></i></span>
+                                    <input type="text" class="form-control" name="middle_name" placeholder="Middle Name">
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Last Name</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-user"></i></span>
+                                    <input type="text" class="form-control" name="last_name" placeholder="Last Name" required>
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <!-- Gender -->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Gender</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-users"></i></span>
+                                    <select class="form-control" name="gender" required>
+                                        <option value="">-- Select --</option>
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <!-- Contact -->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Contact</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-phone"></i></span>
+                                    <input type="text" class="form-control" name="contact" placeholder="Contact Number">
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Email</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-mail5"></i></span>
+                                    <input type="email" class="form-control" name="email" placeholder="Email Address" required>
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <!-- Member Type -->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Member Type</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-user-check"></i></span>
+                                    <select class="form-control" name="member_type" id="member_type" required>
+                                        <option value="">-- Select Member Type --</option>
+                                        <option value="regular">Regular</option>
+                                        <option value="associate">Associate</option>
+                                    </select>
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Address</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="icon-location3"></i></span>
+                                    <textarea class="form-control" name="address" rows="3" placeholder="Complete Address"></textarea>
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
+                        <!-- Capital Share -->
+                        <div class="form-group" id="capitalShareGroup">
+                            <label class="col-sm-3 control-label">Capital Share</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-addon">₱</span>
+                                    <input type="number" class="form-control" name="capital_share" min="0" step="0.01" value="0" placeholder="0.00">
+                                </div>
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+
                     </div>
-                    <hr> <!-- GENDER + CONTACT -->
-                    <div class="row">
-                        <div class="col-md-6"> <label>Gender</label> <select name="gender" class="form-control input-lg" required>
-                                <option value="">-- Select --</option>
-                                <option>Male</option>
-                                <option>Female</option>
-                                <option>Other</option>
-                            </select> </div>
-                        <div class="col-md-6"> <label>Contact Number</label> <input class="form-control input-lg" name="contact"> </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn bg-teal-400 btn-labeled"><b><i class="icon-check"></i></b> Save Member</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                     </div>
-                    <hr> <!-- EMAIL + MEMBER TYPE -->
-                    <div class="row">
-                        <div class="col-md-6"> <label>Email</label> <input type="email" class="form-control input-lg" name="email" required> </div>
-                        <div class="col-md-6"> <label>Member Type</label> <select name="member_type" id="member_type" class="form-control input-lg" required>
-                                <option value="">-- Select Member Type --</option>
-                                <option value="regular">Regular</option>
-                                <option value="associate">Associate</option>
-                            </select> </div>
-                    </div>
-                    <hr> <!-- ADDRESS -->
-                    <div class="form-group"> <label>Complete Address</label> <textarea name="address" rows="3" class="form-control"> </textarea> </div>
-                    <hr> <!-- CAPITAL SHARE -->
-                    <div class="form-group" id="capitalShareGroup"> <label> Capital Share Contribution </label>
-                        <div class="input-group"> <span class="input-group-addon"> ₱ </span> <input type="number" name="capital_share" class="form-control input-lg" min="0" step="0.01" value="0"> </div>
-                    </div>
-                </div> <!-- FOOTER -->
-                <div class="modal-footer"> <button type="button" class="btn btn-default" data-dismiss="modal"> Cancel </button> <button type="submit" id="btnSaveMember" class="btn bg-teal-600 btn-lg"> <span id="btnText"> <i class="icon-check"></i> Save Member </span> <span id="btnLoader" style="display:none;"> <i class="icon-spinner spinner"></i> Saving... </span> </button> </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 </div>
-
-
 
 <div id="modal_edit" class="modal fade">
     <div class="modal-dialog">

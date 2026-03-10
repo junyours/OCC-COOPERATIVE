@@ -572,6 +572,96 @@ while($customer = $customer_analysis_result->fetch_assoc()) {
 
 $row += 2;
 
+// Financial Summary Calculations Section
+$sheet->mergeCells('A'.$row.':H'.$row);
+$sheet->setCellValue('A'.$row, 'FINANCIAL CALCULATIONS & EXPLANATIONS');
+$sheet->getStyle('A'.$row.':H'.$row)->applyFromArray($headerStyle);
+
+$row++;
+$calculationData = [
+    ['Total Revenue Calculation', 'Sales Revenue + Interest Income', number_format($total_cooperative_revenue, 2), '₱' . number_format($sales_data['total_sales'] ?? 0, 2) . ' + ₱' . number_format($interest_income_data['interest_income'] ?? 0, 2)],
+    ['Total Expenses Calculation', 'Operating Expenses + Purchase Costs', number_format($total_cooperative_expenses, 2), '₱' . number_format($expenses_data['total_expenses'] ?? 0, 2) . ' + ₱' . number_format($purchases_data['total_purchases'] ?? 0, 2)],
+    ['Net Profit/Loss Calculation', 'Total Revenue - Total Expenses', number_format(abs($cooperative_profit_loss), 2), '₱' . number_format($total_cooperative_revenue, 2) . ' - ₱' . number_format($total_cooperative_expenses, 2)],
+    ['Net Assets Calculation', 'Savings + Capital + Interest - Outstanding Loans', number_format($net_assets, 2), '₱' . number_format($savings_balance['current_balance'] ?? 0, 2) . ' + ₱' . number_format($total_capital_data['total_capital_all'] ?? 0, 2) . ' + ₱' . number_format($interest_income_data['interest_income'] ?? 0, 2) . ' - ₱' . number_format($loan_portfolio_data['total_approved_loans'] ?? 0, 2)]
+];
+
+foreach ($calculationData as $data) {
+    $sheet->setCellValue('A'.$row, $data[0]);
+    $sheet->setCellValue('B'.$row, $data[1]);
+    $sheet->setCellValue('C'.$row, $data[2]);
+    $sheet->setCellValue('D'.$row, $data[3]);
+    $sheet->getStyle('A'.$row.':D'.$row)->applyFromArray([
+        'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        'font' => ['size' => 10]
+    ]);
+    $row++;
+}
+
+$row += 2;
+
+// Financial Ratios with Detailed Explanations
+$sheet->mergeCells('A'.$row.':H'.$row);
+$sheet->setCellValue('A'.$row, 'FINANCIAL RATIOS WITH CALCULATIONS');
+$sheet->getStyle('A'.$row.':H'.$row)->applyFromArray($headerStyle);
+
+$row++;
+$revenue = $total_cooperative_revenue;
+$profit_loss = $cooperative_profit_loss;
+$cogs = $purchases_data['total_purchases'] ?? 0;
+$inventory_cost = $inventory_data['total_cost_value'] ?? 0;
+
+$ratioData = [
+    ['Gross Profit Margin', '(Revenue - COGS) ÷ Revenue × 100', (($revenue > 0 ? number_format((($revenue - $cogs) / $revenue) * 100, 1) : 0) . '%'), 'Measures profitability after direct costs'],
+    ['Net Profit Margin', '(Net Profit ÷ Revenue) × 100', (($revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0) . '%'), 'Overall profitability after all expenses'],
+    ['Inventory Turnover', 'COGS ÷ Average Inventory Value', (($inventory_cost > 0 ? number_format($cogs / $inventory_cost, 2) : 'N/A')), 'How quickly inventory is sold'],
+    ['Return on Sales', '(Net Profit ÷ Revenue) × 100', (($revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0) . '%'), 'Efficiency of generating profit from sales']
+];
+
+foreach ($ratioData as $data) {
+    $sheet->setCellValue('A'.$row, $data[0]);
+    $sheet->setCellValue('B'.$row, $data[1]);
+    $sheet->setCellValue('C'.$row, $data[2]);
+    $sheet->setCellValue('D'.$row, $data[3]);
+    $sheet->getStyle('A'.$row.':D'.$row)->applyFromArray([
+        'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        'font' => ['size' => 10]
+    ]);
+    $row++;
+}
+
+$row += 2;
+
+// Financial Insights Section
+$sheet->mergeCells('A'.$row.':H'.$row);
+$sheet->setCellValue('A'.$row, 'FINANCIAL HEALTH INSIGHTS');
+$sheet->getStyle('A'.$row.':H'.$row)->applyFromArray($headerStyle);
+
+// Calculate margin separately to avoid complex ternary
+$profit_margin = ($revenue > 0 ? ($profit_loss / $revenue) * 100 : 0);
+$profitability_text = ($profit_loss >= 0 ? 'The cooperative is generating profit' : 'The cooperative is operating at a loss');
+
+$row++;
+$insightData = [
+    ['Profitability Analysis', $profitability_text, number_format($profit_margin, 1) . '%', 'Profit Margin'],
+    ['Asset Growth', 'Net assets represent cooperative financial position', number_format($net_assets, 2), 'Net Assets'],
+    ['Revenue Diversification', (($interest_income_data['interest_income'] ?? 0) > 0 ? 'Interest income contributes to revenue diversity' : 'Revenue relies primarily on sales operations'), '', ''],
+    ['Liquidity Position', ($net_assets > 0 ? 'Strong financial position' : 'Needs attention'), number_format($loan_fund_data['total_loan_fund_balance'] ?? 0, 2), 'Loan Fund Balance']
+];
+
+foreach ($insightData as $data) {
+    $sheet->setCellValue('A'.$row, $data[0]);
+    $sheet->setCellValue('B'.$row, $data[1]);
+    $sheet->setCellValue('C'.$row, $data[2]);
+    $sheet->setCellValue('D'.$row, $data[3]);
+    $sheet->getStyle('A'.$row.':D'.$row)->applyFromArray([
+        'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        'font' => ['size' => 10]
+    ]);
+    $row++;
+}
+
+$row += 2;
+
 // Financial Ratios
 $sheet->mergeCells('A'.$row.':H'.$row);
 $sheet->setCellValue('A'.$row, 'FINANCIAL RATIOS & KPIS');

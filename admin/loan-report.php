@@ -11,12 +11,16 @@ require('db_connect.php');
 // ===================== FILTER VARIABLES =====================
 $member_filter = '';
 $status_filter = '';
+$date_filter = '';
 $selected_member = '';
 $status_text = 'All';
+$date_from = '';
+$date_to = '';
+$status = '';
 
 if (!empty($_POST['membername'])) {
     $membername = $db->real_escape_string($_POST['membername']);
-    $member_filter = " AND m.name LIKE '%$membername%' ";
+    $member_filter = " AND (CONCAT(m.first_name, ' ', m.last_name) LIKE '%$membername%' OR m.first_name LIKE '%$membername%' OR m.last_name LIKE '%$membername%') ";
     $selected_member = $membername;
 }
 
@@ -26,27 +30,30 @@ if (!empty($_POST['status'])) {
     $status_text = ucfirst($status);
 }
 
+if (!empty($_POST['date_from'])) {
+    $date_from = $db->real_escape_string($_POST['date_from']);
+    $date_filter .= " AND DATE(l.application_date) >= '$date_from' ";
+}
+
+if (!empty($_POST['date_to'])) {
+    $date_to = $db->real_escape_string($_POST['date_to']);
+    $date_filter .= " AND DATE(l.application_date) <= '$date_to' ";
+}
+
 // ===================== SUMMARY QUERY =====================
 $summary_sql = "
     SELECT
         COUNT(l.loan_id) AS total_loans,
         COALESCE(SUM(l.requested_amount),0) AS total_requested,
         COALESCE(SUM(l.approved_amount),0) AS total_approved,
-        COALESCE(SUM(
-            CASE 
-                WHEN tt.type_name = 'loan_release'
-                THEN t.amount
-                ELSE 0
-            END
-        ),0) AS total_disbursed
+        COALESCE(SUM(l.total_due),0) AS total_disbursed
     FROM loans l
     LEFT JOIN accounts a ON a.account_id = l.account_id
-    LEFT JOIN tbl_members m ON m.cust_id = a.member_id
-    LEFT JOIN transactions t ON t.account_id = l.account_id
-    LEFT JOIN transaction_types tt ON tt.transaction_type_id = t.transaction_type_id
+    LEFT JOIN tbl_members m ON m.member_id = a.member_id
     WHERE 1=1
     $member_filter
     $status_filter
+    $date_filter
 ";
 $summary_query = $db->query($summary_sql);
 $summary = $summary_query ? $summary_query->fetch_assoc() : [
@@ -60,7 +67,7 @@ $summary = $summary_query ? $summary_query->fetch_assoc() : [
 $loan_sql = "
 SELECT 
     l.loan_id,
-    MAX(CONCAT(m.last_name, ', ', m.first_name)) AS member_name,
+    CONCAT(m.last_name, ', ', m.first_name) AS member_name,
     l.requested_amount,
     l.approved_amount,
     l.interest_rate,
@@ -78,23 +85,21 @@ SELECT
         END
     ), 0) AS total_paid,
 
-    COALESCE(SUM(
-        CASE 
-            WHEN tt.type_name = 'loan_release' 
-            THEN t.amount 
-            ELSE 0 
-        END
-    ), 0) AS total_released
+    l.approved_amount AS total_disbursed,
+    
+    -- Calculate expected total (principal + interest)
+    (l.approved_amount + (l.approved_amount * (l.interest_rate / 100) * l.term_value / 12)) AS expected_total
 
 FROM loans l
 LEFT JOIN accounts a ON a.account_id = l.account_id
-LEFT JOIN tbl_members m ON m.cust_id = a.member_id
+LEFT JOIN tbl_members m ON m.member_id = a.member_id
 LEFT JOIN transactions t ON t.account_id = l.account_id
 LEFT JOIN transaction_types tt ON tt.transaction_type_id = t.transaction_type_id
 WHERE 1=1
 $member_filter
 $status_filter
-GROUP BY l.loan_id, l.requested_amount, l.approved_amount, l.interest_rate, l.term_value, l.term_unit, l.status, l.total_due, l.released_date
+$date_filter
+GROUP BY l.loan_id, l.requested_amount, l.approved_amount, l.interest_rate, l.term_value, l.term_unit, l.status, l.total_due, l.released_date, m.first_name, m.last_name
 ORDER BY l.application_date DESC
 ";
 
@@ -190,39 +195,71 @@ $loan_query = $db->query($loan_sql);
                         ?>
                     </div>
 
-                    <!-- Filter Form -->
+                    <!-- Enhanced Filter Form -->
                     <div class="panel panel-body">
-                        <form class="heading-form" id="form-loan" method="POST">
+                        <form class="form-horizontal" id="form-loan" method="POST">
                             <input type="hidden" name="submit-loan">
-                            <input type="hidden" id="input-status" name="status" value="">
-                            <ul class="breadcrumb-elements" style="float:left">
-                                <li style="padding-top: 2px;padding-right: 2px">
-                                    <div class="btn-group">
-                                        <input style="width: 230px" autocomplete="off" type="search" class="form-control"
-                                            id="member-input" value="<?php echo $selected_member; ?>" name="membername">
-                                        <span id="searchclearmember" class="glyphicon glyphicon-remove-circle"></span>
-                                        <div id="show-search-member"></div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label class="control-label col-md-3">Member:</label>
+                                        <div class="col-md-9">
+                                            <input type="text" class="form-control" id="member-input" 
+                                                   value="<?php echo $selected_member; ?>" name="membername" 
+                                                   placeholder="Search member...">
+                                        </div>
                                     </div>
-                                </li>
-                                <li class="text-center" style="padding-top: 2px;padding-right: 2px;width:auto;">
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-default btn-rounded dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
-                                        <ul class="dropdown-menu dropdown-menu-right">
-                                            <li onclick="select_status(this)" status-val="pending" status-name="Pending"><a href="#">Pending</a></li>
-                                            <li onclick="select_status(this)" status-val="approved" status-name="Approved"><a href="#">Approved</a></li>
-                                            <li onclick="select_status(this)" status-val="disbursed" status-name="Disbursed"><a href="#">Disbursed</a></li>
-                                            <li onclick="select_status(this)" status-val="rejected" status-name="Rejected"><a href="#">Rejected</a></li>
-                                            <li onclick="select_status(this)" status-val="" status-name="All"><a href="#">All</a></li>
-                                        </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label class="control-label col-md-3">Status:</label>
+                                        <div class="col-md-9">
+                                            <select class="form-control" name="status" id="status-select">
+                                                <option value="">All Status</option>
+                                                <option value="pending" <?php echo ($status == 'pending') ? 'selected' : ''; ?>>Pending</option>
+                                                <option value="approved" <?php echo ($status == 'approved') ? 'selected' : ''; ?>>Approved</option>
+                                                <option value="disbursed" <?php echo ($status == 'disbursed') ? 'selected' : ''; ?>>Disbursed</option>
+                                                <option value="rejected" <?php echo ($status == 'rejected') ? 'selected' : ''; ?>>Rejected</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                </li>
-                                <li style="padding-top: 2px;padding-right: 2px">
-                                    <button type="submit" class="btn bg-teal-400"><b><i class="icon-search4"></i></b></button>
-                                </li>
-                                <li style="padding-top: 2px;padding-right: 2px">
-                                    <button type="button" onclick="clear_filter()" class="btn bg-slate-400"><b><i class="icon-filter4"></i></b></button>
-                                </li>
-                            </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label class="control-label col-md-3">Date From:</label>
+                                        <div class="col-md-9">
+                                            <input type="date" class="form-control" name="date_from" 
+                                                   value="<?php echo $date_from; ?>">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label class="control-label col-md-3">Date To:</label>
+                                        <div class="col-md-9">
+                                            <input type="date" class="form-control" name="date_to" 
+                                                   value="<?php echo $date_to; ?>">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <div class="col-md-12 text-right">
+                                            <button type="submit" class="btn bg-teal-400">
+                                                <i class="icon-search4"></i> Search
+                                            </button>
+                                            <button type="button" onclick="clear_filter()" class="btn bg-slate-400">
+                                                <i class="icon-filter4"></i> Clear
+                                            </button>
+                                            <button type="button" onclick="export_csv()" class="btn bg-blue-400">
+                                                <i class="icon-file-excel"></i> Export CSV
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </form>
                     </div>
 
@@ -250,21 +287,58 @@ $loan_query = $db->query($loan_sql);
 
                                 <tbody>
                                     <?php
+                                    // Helper functions for styling
+                                    function getStatusColor($status) {
+                                        switch($status) {
+                                            case 'pending': return 'warning';
+                                            case 'approved': return 'info';
+                                            case 'disbursed': return 'success';
+                                            case 'rejected': return 'danger';
+                                            default: return 'default';
+                                        }
+                                    }
+                                    
+                                    function getProgressColor($progress) {
+                                        if ($progress >= 80) return 'progress-bar-success';
+                                        if ($progress >= 50) return 'progress-bar-warning';
+                                        return 'progress-bar-danger';
+                                    }
+                                    
                                     while ($row = $loan_query->fetch_assoc()) {
-                                        $progress = ($row['total_due'] > 0)
-                                            ? round(($row['total_paid'] / $row['total_due']) * 100, 2)
+                                        // Use expected_total for progress calculation
+                                        $expected_total = $row['expected_total'] > 0 ? $row['expected_total'] : $row['approved_amount'];
+                                        $progress = ($expected_total > 0)
+                                            ? round(($row['total_paid'] / $expected_total) * 100, 2)
                                             : 0;
+                                        
+                                        // Only cap at 100% for paid/completed loans
+                                        if ($row['status'] === 'paid' || $row['status'] === 'completed') {
+                                            $progress = min(100, $progress);
+                                        }
 
                                         echo "<tr>";
-                                        echo "<td>{$row['loan_id']}</td>";
+                                        echo "<td>
+                                                <a href='javascript:void(0);' onclick='view_loan_details({$row['loan_id']})' 
+                                                   class='btn-link text-teal-400' title='View Details'>
+                                                   {$row['loan_id']}
+                                                </a>
+                                              </td>";
                                         echo "<td>" . htmlspecialchars($row['member_name'] ?? '') . "</td>";
                                         echo "<td align='right'>" . number_format($row['requested_amount'], 2) . "</td>";
                                         echo "<td align='right'>" . number_format($row['approved_amount'], 2) . "</td>";
-                                        echo "<td align='right'>" . number_format($row['total_released'], 2) . "</td>";
+                                        echo "<td align='right'>" . number_format($row['total_disbursed'], 2) . "</td>";
                                         echo "<td align='center'>{$row['term_value']} {$row['term_unit']}</td>";
                                         echo "<td align='center'>{$row['interest_rate']}%</td>";
-                                        echo "<td>" . ucfirst($row['status']) . "</td>";
-                                        echo "<td align='center'>{$progress}%</td>";
+                                        echo "<td><span class='label label-" . getStatusColor($row['status']) . "'>" . ucfirst($row['status']) . "</span></td>";
+                                        echo "<td align='center'>
+                                                <div class='progress' style='margin-bottom: 0; height: 20px;'>
+                                                    <div class='progress-bar " . getProgressColor($progress) . "' 
+                                                         style='width: {$progress}%' 
+                                                         title='{$progress}%'>
+                                                        {$progress}%
+                                                    </div>
+                                                </div>
+                                              </td>";
                                         echo "</tr>";
                                     }
                                     ?>
@@ -284,16 +358,86 @@ $loan_query = $db->query($loan_sql);
     <script src="../assets/js/plugins/notifications/jgrowl.min.js"></script>
 
     <script>
-        function select_status(el) {
-            var val = el.getAttribute('status-val');
-            var name = el.getAttribute('status-name');
-            document.getElementById('input-status').value = val;
+        // Member autocomplete functionality
+        $(document).ready(function() {
+            $('#member-input').on('input', function() {
+                var query = $(this).val();
+                if (query.length >= 2) {
+                    $.ajax({
+                        url: 'ajax_get_members.php',
+                        type: 'POST',
+                        data: { query: query },
+                        success: function(data) {
+                            $('#show-search-member').html(data).show();
+                        }
+                    });
+                } else {
+                    $('#show-search-member').hide();
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.member-search').length) {
+                    $('#show-search-member').hide();
+                }
+            });
+        });
+
+        function select_member(name) {
+            $('#member-input').val(name);
+            $('#show-search-member').hide();
         }
 
         function clear_filter() {
             document.getElementById('member-input').value = '';
-            document.getElementById('input-status').value = '';
+            document.getElementById('status-select').value = '';
+            document.querySelector('input[name="date_from"]').value = '';
+            document.querySelector('input[name="date_to"]').value = '';
             document.getElementById('form-loan').submit();
+        }
+
+        function export_csv() {
+            var form = document.getElementById('form-loan');
+            var formData = new FormData(form);
+            
+            // Create export URL with current filters
+            var exportUrl = 'export_loan_report.php?' + new URLSearchParams(formData).toString();
+            window.open(exportUrl, '_blank');
+        }
+
+        // Enhanced DataTable initialization
+        $(document).ready(function() {
+            $('.datatable-loan').DataTable({
+                responsive: true,
+                pageLength: 25,
+                order: [[0, 'desc']],
+                columnDefs: [
+                    { targets: [0], width: '80px' },
+                    { targets: [1], width: '200px' },
+                    { targets: [2, 3, 4], width: '120px', className: 'text-right' },
+                    { targets: [5], width: '100px', className: 'text-center' },
+                    { targets: [6], width: '100px', className: 'text-center' },
+                    { targets: [7], width: '100px' },
+                    { targets: [8], width: '120px', className: 'text-center' }
+                ],
+                language: {
+                    search: "Search loans:",
+                    lengthMenu: "Show _MENU_ loans per page",
+                    info: "Showing _START_ to _END_ of _TOTAL_ loans",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                }
+            });
+        });
+
+        function view_loan_details(loanId) {
+            // You can implement a modal or redirect to a details page
+            alert('Loan details view for Loan ID: ' + loanId + '\n\nThis can be expanded to show a modal with full loan details including payment history, schedule, etc.');
         }
     </script>
 </body>

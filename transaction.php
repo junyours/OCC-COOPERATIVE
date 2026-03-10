@@ -145,7 +145,7 @@ if (isset($_POST['save-menu-inventory'])) {
         }
     }
 }
-///////////converted
+
 
 
 
@@ -263,6 +263,7 @@ if (isset($_POST['save-customer'])) {
     $data = array(
         'first_name' => trim($_POST['first_name']),
         'last_name'  => trim($_POST['last_name']),
+        'middle_name'=> trim($_POST['middle_name']),
         'gender'     => $_POST['gender'],
         'email'      => trim($_POST['email']),
 
@@ -313,16 +314,17 @@ function save_member($data)
         // Insert into tbl_members
         $stmt = $db->prepare(
             "INSERT INTO tbl_members
-    (user_id, cust_id, first_name, last_name, gender, email, address, phone, type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    (user_id, cust_id, first_name, last_name, middle_name,gender, email, address, phone, type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $stmt->bind_param(
-            "iisssssss",
+            "iissssssss",
             $user_id,
             $cust_id,
             $data['first_name'],
             $data['last_name'],
+            $data['middle_name'],
             $data['gender'],
             $data['email'],
             $data['address'],
@@ -360,8 +362,6 @@ function save_member($data)
             $stmt->bind_result($transaction_type_id);
             $stmt->fetch();
             $stmt->close();
-
-
 
 
 

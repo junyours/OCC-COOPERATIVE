@@ -75,11 +75,11 @@ function getExpensesByCategory($db, $start_date, $end_date) {
 
 function getPurchasesData($db, $start_date, $end_date) {
     $query = "SELECT 
-        SUM(total_amount) as total_purchases,
-        COUNT(*) as purchase_count,
-        AVG(total_amount) as avg_purchase
-        FROM tbl_receivings 
-        WHERE DATE(date_received) BETWEEN '$start_date' AND '$end_date'";
+        SUM(r.receiving_quantity * r.receiving_price) as total_purchases,
+        COUNT(DISTINCT r.receiving_no) as purchase_count,
+        AVG(r.receiving_quantity * r.receiving_price) as avg_purchase
+        FROM tbl_receivings r 
+        WHERE DATE(r.date_received) BETWEEN '$start_date' AND '$end_date'";
     
     $result = $db->query($query);
     return $result->fetch_assoc();
@@ -126,8 +126,8 @@ function getTotalCapitalData($db, $start_date, $end_date) {
 
 function getLoanPortfolioData($db, $start_date, $end_date) {
     $query = "SELECT 
-        SUM(CASE WHEN l.status IN ('released', 'ongoing', 'overdue') THEN l.approved_amount ELSE 0 END) as total_disbursed,
-        SUM(CASE WHEN l.status = 'paid' THEN l.approved_amount ELSE 0 END) as total_repaid,
+        SUM(CASE WHEN l.status IN ('released', 'ongoing', 'overdue') THEN l.total_due ELSE 0 END) as total_disbursed,
+        SUM(CASE WHEN l.status = 'paid' THEN l.total_due ELSE 0 END) as total_repaid,
         COUNT(CASE WHEN l.status IN ('released', 'ongoing', 'overdue') THEN 1 END) as loan_count,
         COUNT(CASE WHEN l.status = 'pending' THEN 1 END) as pending_count,
         COUNT(DISTINCT a.member_id) as borrowers_count
@@ -156,7 +156,7 @@ function getInterestIncomeData($db, $start_date, $end_date) {
 
 function getLoanDisbursementsData($db, $start_date, $end_date) {
     $query = "SELECT 
-        SUM(l.approved_amount) as total_disbursed_all,
+        SUM(l.total_due ) as total_disbursed_all,
         COUNT(CASE WHEN l.status IN ('released', 'ongoing', 'overdue') THEN 1 END) as disbursement_count_all
         FROM loans l
         JOIN accounts a ON l.account_id = a.account_id
@@ -184,9 +184,9 @@ function getLoanRepaymentsData($db, $start_date, $end_date) {
     return $result->fetch_assoc();
 }
 
-// 6. SAVINGS/DEPOSITS QUERIES
+
 function getSavingsData($db, $start_date, $end_date) {
-    // Simplified approach based on financial.php reference - just sum all amounts
+    
     $query = "SELECT 
         SUM(t.amount) as total_deposits,
         COUNT(*) as deposit_count,
@@ -201,7 +201,7 @@ function getSavingsData($db, $start_date, $end_date) {
     $result = $db->query($query);
     $data = $result->fetch_assoc();
     
-    // Set withdrawals to 0 since financial.php doesn't separate them
+    
     $data['total_withdrawals'] = 0;
     $data['withdrawal_count'] = 0;
     
@@ -209,11 +209,11 @@ function getSavingsData($db, $start_date, $end_date) {
 }
 
 function getSavingsBalanceData($db, $start_date, $end_date) {
-    // Simplified approach based on financial.php reference - just sum all amounts
+   
     $query = "SELECT 
         SUM(t.amount) as current_balance,
         COUNT(DISTINCT a.member_id) as active_savers
-        FROM transactions t
+        FROM transactions t 
         JOIN accounts a ON t.account_id = a.account_id
         JOIN account_types at ON a.account_type_id = at.account_type_id
         WHERE at.type_name = 'savings'
@@ -224,8 +224,8 @@ function getSavingsBalanceData($db, $start_date, $end_date) {
     return $result->fetch_assoc();
 }
 
-function getCumulativeSavingsBalance($db) {
-    // Simplified approach based on financial.php reference - just sum all amounts
+function getCumulativeSavingsBalance($db, $start_date, $end_date) {
+  
     $query = "SELECT 
         SUM(t.amount) as current_balance,
         COUNT(DISTINCT a.member_id) as active_savers
@@ -233,15 +233,14 @@ function getCumulativeSavingsBalance($db) {
         JOIN accounts a ON t.account_id = a.account_id
         JOIN account_types at ON a.account_type_id = at.account_type_id
         WHERE at.type_name = 'savings'
-        AND t.status = 'active'";
+        AND t.status = 'active'
+         AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'"; 
     
     $result = $db->query($query);
     return $result->fetch_assoc();
 }
 
-// =====================================
-// DATA EXECUTION SECTION
-// =====================================
+
 
 // Execute all queries and get data
 $sales_data = getSalesData($db, $start_date, $end_date);
@@ -267,7 +266,7 @@ if ($cooperative_tables_exist) {
     $loan_repayments_all = getLoanRepaymentsData($db, $start_date, $end_date);
     $savings_data = getSavingsData($db, $start_date, $end_date);
     $savings_balance = getSavingsBalanceData($db, $start_date, $end_date);
-    $cumulative_savings_balance = getCumulativeSavingsBalance($db);
+    $cumulative_savings_balance = getCumulativeSavingsBalance($db, $start_date, $end_date);
     
     // Prepare data for display
     $deposits_data = [
@@ -317,8 +316,8 @@ if ($cooperative_tables_exist) {
     $total_cooperative_revenue = ($sales_data['total_sales'] ?? 0) + ($interest_income_data['interest_income'] ?? 0);
     $total_cooperative_expenses = ($expenses_data['total_expenses'] ?? 0) + ($purchases_data['total_purchases'] ?? 0);
     $cooperative_profit_loss = $total_cooperative_revenue - $total_cooperative_expenses;
-    $net_assets = ($savings_balance['current_balance'] ?? 0) + ($loan_portfolio_data['total_disbursed'] ?? 0) - ($loan_repayments_all['total_repaid_all'] ?? 0);
-    
+    $net_assets = ($savings_balance['current_balance'] ?? 0) + ($total_capital_data['total_capital_all'] ?? 0) + ($loan_repayments_all['total_repaid_all'] ?? 0) - ($loan_portfolio_data['total_disbursed']?? 0);
+
  } else {
     // Set default values when cooperative tables don't exist
     $capital_data = ['total_capital' => 0, 'total_shares' => 0, 'total_members' => 0];
@@ -375,6 +374,7 @@ $inventory_value_query = "SELECT SUM(quantity * selling_price) as total_inventor
 $inventory_result = $db->query($inventory_value_query);
 $inventory_data = $inventory_result->fetch_assoc();
 
+
 // Date-filtered inventory movements
 $inventory_movements_query = "SELECT 
         SUM(CASE WHEN r.field_status = 0 THEN r.receiving_quantity * p.selling_price ELSE 0 END) as purchases_value,
@@ -429,7 +429,7 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     .metric-label {
         font-size: 0.9em;
         opacity: 0.9;
-    }
+    }   
     
     .profit-positive {
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
@@ -488,7 +488,81 @@ $customer_analysis_result = $db->query($customer_analysis_query);
         background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         transition: width 0.3s ease;
     }
-       .navbar-brand {
+    
+    .calculation-box {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .calculation-title {
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 8px;
+    }
+    
+    .calculation-formula {
+        font-family: 'Courier New', monospace;
+        background: #fff;
+        padding: 8px;
+        border-radius: 3px;
+        margin: 5px 0;
+        font-size: 0.9em;
+    }
+    
+    .calculation-steps {
+        margin: 8px 0;
+        padding-left: 20px;
+    }
+    
+    .calculation-steps li {
+        margin: 3px 0;
+        font-size: 0.9em;
+    }
+    
+    .ratio-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        border: 1px solid #dee2e6;
+    }
+    
+    .ratio-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .ratio-label {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    
+    .ratio-description {
+        font-size: 0.8em;
+        color: #868e96;
+        margin-top: 5px;
+    }
+    
+    .insight-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .insight-title {
+        font-weight: bold;
+        color: #1976d2;
+        margin-bottom: 8px;
+    }
+    
+    .navbar-brand {
         display: flex;
         align-items: center;
         font-weight: 800;
@@ -505,10 +579,8 @@ $customer_analysis_result = $db->query($customer_analysis_query);
         border-radius: 20px;
     }
 
-
     .navbar-brand span {
         white-space: nowrap;
-
     }
 </style>
 
@@ -546,7 +618,7 @@ $customer_analysis_result = $db->query($customer_analysis_query);
             <div class="content">
 
 <!-- Database Status Notification -->
-<?php if (!$cooperative_tables_exist): ?>
+<!-- <?php if (!$cooperative_tables_exist): ?>
 <div class="alert alert-warning" style="margin-bottom: 20px;">
     <h4><i class="fa fa-exclamation-triangle"></i> Cooperative Tables Not Found</h4>
     <p>The cooperative-specific tables (accounts, transactions) are not currently in your database. The report shows business operations only.</p>
@@ -564,10 +636,10 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     <h4><i class="fa fa-check-circle"></i> Full Cooperative Mode Active</h4>
     <p>All cooperative financial components are available including capital shares, loans, and savings through the accounts and transactions system.</p>
 </div>
-<?php endif; ?>
+<?php endif; ?> -->
 
 
-<!-- Key Financial Metrics -->
+
 <div class="row">
     <div class="col-lg-3 col-md-6">
         <div class="financial-metric">
@@ -638,6 +710,7 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 </div>
 
 
+
 <!-- Date Filter -->
 <div class="date-filter">
     <form method="GET" class="form-inline">
@@ -663,6 +736,75 @@ $customer_analysis_result = $db->query($customer_analysis_query);
         </a>
     </form>
 </div>
+
+<!-- Financial Summary Calculation Details -->
+<div class="panel">
+    <div class="panel-heading">
+        <h4><i class="fa fa-calculator"></i> Financial Summary Calculations</h4>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="calculation-box">
+                    <div class="calculation-title">Total Revenue Calculation:</div>
+                    <div class="calculation-formula">Sales Revenue + Interest Income</div>
+                    <ul class="calculation-steps">
+                        <li>Sales Revenue: ₱<?php echo number_format($sales_data['total_sales'] ?? 0, 2); ?></li>
+                        <li>Interest Income: ₱<?php echo number_format($interest_income_data['interest_income'] ?? 0, 2); ?></li>
+                        <li><strong>Total Revenue: ₱<?php echo number_format($total_cooperative_revenue, 2); ?></strong></li>
+                    </ul>
+                </div>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Total Expenses Calculation:</div>
+                    <div class="calculation-formula">Operating Expenses + Purchase Costs</div>
+                    <ul class="calculation-steps">
+                        <li>Operating Expenses: ₱<?php echo number_format($expenses_data['total_expenses'] ?? 0, 2); ?></li>
+                        <li>Purchase Costs: ₱<?php echo number_format($purchases_data['total_purchases'] ?? 0, 2); ?></li>
+                        <li><strong>Total Expenses: ₱<?php echo number_format($total_cooperative_expenses, 2); ?></strong></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="calculation-box">
+                    <div class="calculation-title">Net Profit/Loss Calculation:</div>
+                    <div class="calculation-formula">Total Revenue - Total Expenses</div>
+                    <ul class="calculation-steps">
+                        <li>Total Revenue: ₱<?php echo number_format($total_cooperative_revenue, 2); ?></li>
+                        <li>Total Expenses: ₱<?php echo number_format($total_cooperative_expenses, 2); ?></li>
+                        <li><strong>Net <?php echo $cooperative_profit_loss >= 0 ? 'Profit' : 'Loss'; ?>: ₱<?php echo number_format(abs($cooperative_profit_loss), 2); ?></strong></li>
+                    </ul>
+                </div>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Net Assets Calculation:</div>
+                    <div class="calculation-formula">Savings + Capital + Interest - Outstanding Loans</div>
+                    <ul class="calculation-steps">
+                        <li>Savings Balances: ₱<?php echo number_format($savings_balance['current_balance'] ?? 0, 2); ?></li>
+                        <li>Capital Shares: ₱<?php echo number_format($total_capital_data['total_capital_all'] ?? 0, 2); ?></li>
+                        <li>Interest Income: ₱<?php echo number_format($interest_income_data['interest_income'] ?? 0, 2); ?></li>
+                        <li>Outstanding Loans: -₱<?php echo number_format($loan_portfolio_data['total_approved_loans'] ?? 0, 2); ?></li>
+                        <li><strong>Net Assets: ₱<?php echo number_format($net_assets, 2); ?></strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="insight-box">
+            <div class="insight-title">Financial Health Insights:</div>
+            <ul>
+                <li><strong>Profitability:</strong> <?php echo $cooperative_profit_loss >= 0 ? 'The cooperative is generating profit' : 'The cooperative is operating at a loss'; ?> with a margin of <?php echo $total_cooperative_revenue > 0 ? number_format(($cooperative_profit_loss / $total_cooperative_revenue) * 100, 1) : 0; ?>%.</li>
+                <li><strong>Asset Growth:</strong> Net assets stand at ₱<?php echo number_format($net_assets, 2); ?>, representing the cooperative's overall financial position.</li>
+                <li><strong>Revenue Diversification:</strong> <?php echo ($interest_income_data['interest_income'] ?? 0) > 0 ? 'Interest income contributes to revenue diversity' : 'Revenue relies primarily on sales operations'; ?>.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+
+
 
 
 <!-- Cooperative Financial Panels -->
@@ -696,6 +838,18 @@ $customer_analysis_result = $db->query($customer_analysis_query);
                         <td>₱<?php echo ($total_capital_data['total_members_all'] ?? 0) > 0 ? number_format(($total_capital_data['total_capital_all'] ?? 0) / $total_capital_data['total_members_all'], 2) : '0.00'; ?></td>
                     </tr>
                 </table>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Capital Shares Calculation Details:</div>
+                    <div class="calculation-formula">SUM of deposit transactions for capital_share account type</div>
+                    <ul class="calculation-steps">
+                        <li><strong>Data Source:</strong> All member transaction records from our cooperative system</li>
+                        <li><strong>Filter:</strong> Only capital share deposits are included</li>
+                        <li><strong>All Time Total:</strong> ₱<?php echo number_format($total_capital_data['total_capital_all'] ?? 0, 2); ?></li>
+                        <li><strong>Period Total:</strong> ₱<?php echo number_format($capital_data['total_capital'] ?? 0, 2); ?></li>
+                        <li><strong>Average per Member:</strong> ₱<?php echo ($total_capital_data['total_members_all'] ?? 0) > 0 ? number_format(($total_capital_data['total_capital_all'] ?? 0) / $total_capital_data['total_members_all'], 2) : '0.00'; ?></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -709,12 +863,8 @@ $customer_analysis_result = $db->query($customer_analysis_query);
             <div class="panel-body">
                 <table class="table table-striped">
                     <tr>
-                        <td><strong>Total Approved Loans</strong></td>
+                        <td><strong>Total Active Loans</strong></td>
                         <td>₱<?php echo number_format($loan_portfolio_data['total_approved_loans'] ?? 0, 2); ?></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Pending Applications</strong></td>
-                        <td>₱<?php echo number_format($loan_portfolio_data['total_pending_loans'] ?? 0, 2); ?></td>
                     </tr>
                     <tr>
                         <td><strong>Total Disbursed</strong></td>
@@ -728,7 +878,23 @@ $customer_analysis_result = $db->query($customer_analysis_query);
                         <td><strong>Interest Income</strong></td>
                         <td style="color: green;">₱<?php echo number_format($loan_repayments_data['total_interest'] ?? 0, 2); ?></td>
                     </tr>
+                    <tr>
+                        <td><strong>Outstanding Principal</strong></td>
+                        <td style="color: orange;">₱<?php echo number_format(($loan_disbursements_data['total_disbursed'] ?? 0) - ($loan_repayments_data['total_repaid'] ?? 0), 2); ?></td>
+                    </tr>
                 </table>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Loan Portfolio Calculations:</div>
+                    <div class="calculation-formula">Active Loans = Disbursed - Repaid</div>
+                    <ul class="calculation-steps">
+                        <li><strong>Total Disbursed:</strong> Total amount of money given to members as loans</li>
+                        <li><strong>Total Repayments:</strong> Total amount borrowers have paid back</li>
+                        <li><strong>Interest Income:</strong> Money earned from loan interest charges</li>
+                        <li><strong>Outstanding Principal:</strong> ₱<?php echo number_format(($loan_disbursements_data['total_disbursed'] ?? 0) - ($loan_repayments_data['total_repaid'] ?? 0), 2); ?></li>
+                        <li><strong>Recovery Rate:</strong> <?php echo ($loan_disbursements_data['total_disbursed'] ?? 0) > 0 ? number_format((($loan_repayments_data['total_repaid'] ?? 0) / $loan_disbursements_data['total_disbursed']) * 100, 1) : 0; ?>%</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -764,7 +930,25 @@ $customer_analysis_result = $db->query($customer_analysis_query);
                         <td><strong>Average Balance per Account</strong></td>
                         <td>₱<?php echo ($current_balances_data['active_accounts'] ?? 0) > 0 ? number_format(($current_balances_data['total_current_balance'] ?? 0) / $current_balances_data['active_accounts'], 2) : '0.00'; ?></td>
                     </tr>
+                    <tr>
+                        <td><strong>Net Period Change</strong></td>
+                        <td style="color: <?php echo (($deposits_data['total_savings'] ?? 0) - ($deposits_data['total_withdrawals'] ?? 0)) >= 0 ? 'green' : 'red'; ?>;">₱<?php echo number_format(($deposits_data['total_savings'] ?? 0) - ($deposits_data['total_withdrawals'] ?? 0), 2); ?></td>
+                    </tr>
                 </table>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Savings Calculations:</div>
+                    <div class="calculation-formula">Balance = SUM of deposit transactions for savings accounts</div>
+                    <ul class="calculation-steps">
+                        <li><strong>Data Source:</strong> All member savings records from our cooperative system</li>
+                        <li><strong>Filter:</strong> Only active savings accounts are included</li>
+                        <li><strong>Total Balance:</strong> ₱<?php echo number_format($current_balances_data['total_current_balance'] ?? 0, 2); ?></li>
+                        <li><strong>Period Deposits:</strong> ₱<?php echo number_format($deposits_data['total_savings'] ?? 0, 2); ?></li>
+                        <li><strong>Period Withdrawals:</strong> ₱<?php echo number_format($deposits_data['total_withdrawals'] ?? 0, 2); ?></li>
+                        <li><strong>Net Change:</strong> ₱<?php echo number_format(($deposits_data['total_savings'] ?? 0) - ($deposits_data['total_withdrawals'] ?? 0), 2); ?></li>
+                        <li><strong>Average per Account:</strong> ₱<?php echo ($current_balances_data['active_accounts'] ?? 0) > 0 ? number_format(($current_balances_data['total_current_balance'] ?? 0) / $current_balances_data['active_accounts'], 2) : '0.00'; ?></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -778,10 +962,6 @@ $customer_analysis_result = $db->query($customer_analysis_query);
             <div class="panel-body">
                 <table class="table table-striped">
                     <tr>
-                        <td><strong>Beginning Cash</strong></td>
-                        <td>₱<?php echo number_format($beginning_cash_data['total_beginning_cash'] ?? 0, 2); ?></td>
-                    </tr>
-                    <tr>
                         <td><strong>Loan Fund Balance</strong></td>
                         <td>₱<?php echo number_format($loan_fund_data['total_loan_fund_balance'] ?? 0, 2); ?></td>
                     </tr>
@@ -790,14 +970,35 @@ $customer_analysis_result = $db->query($customer_analysis_query);
                         <td>₱<?php echo number_format($inventory_data['total_inventory_value'] ?? 0, 2); ?></td>
                     </tr>
                     <tr>
+                        <td><strong>Inventory Cost Value</strong></td>
+                        <td>₱<?php echo number_format($inventory_data['total_cost_value'] ?? 0, 2); ?></td>
+                    </tr>
+                    <tr>
                         <td><strong>Outstanding Loans</strong></td>
-                        <td style="color: orange;">₱<?php echo number_format(($loan_disbursements_data['total_disbursed'] ?? 0) - ($loan_repayments_data['total_principal'] ?? 0), 2); ?></td>
+                        <td style="color: orange;">₱<?php echo number_format(($loan_disbursements_data['total_disbursed'] ?? 0) - ($loan_repayments_data['total_repaid'] ?? 0), 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Potential Gross Profit</strong></td>
+                        <td style="color: blue;">₱<?php echo number_format(($inventory_data['total_inventory_value'] ?? 0) - ($inventory_data['total_cost_value'] ?? 0), 2); ?></td>
                     </tr>
                     <tr>
                         <td><strong>Net Financial Position</strong></td>
                         <td style="font-weight: bold; color: <?php echo $net_assets >= 0 ? 'green' : 'red'; ?>;">₱<?php echo number_format($net_assets, 2); ?></td>
                     </tr>
                 </table>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Cash & Fund Calculations:</div>
+                    <div class="calculation-formula">Net Assets = (Savings + Capital + Inventory + Loan Fund) - Outstanding Loans</div>
+                    <ul class="calculation-steps">
+                        <li><strong>Loan Fund:</strong> Money available to lend to members</li>
+                        <li><strong>Inventory Value:</strong> What our products could sell for at current prices</li>
+                        <li><strong>Inventory Cost:</strong> What we originally paid for our products</li>
+                        <li><strong>Potential Gross Profit:</strong> ₱<?php echo number_format(($inventory_data['total_inventory_value'] ?? 0) - ($inventory_data['total_cost_value'] ?? 0), 2); ?></li>
+                        <li><strong>Outstanding Loans:</strong> ₱<?php echo number_format(($loan_disbursements_data['total_disbursed'] ?? 0) - ($loan_repayments_data['total_repaid'] ?? 0), 2); ?></li>
+                        <li><strong>Net Assets:</strong> ₱<?php echo number_format($net_assets, 2); ?></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -826,10 +1027,30 @@ $customer_analysis_result = $db->query($customer_analysis_query);
                         <td>₱<?php echo number_format(($sales_data['total_sales'] ?? 0) / max(1, $sales_data['total_transactions']), 2); ?></td>
                     </tr>
                     <tr>
+                        <td><strong>Interest Income</strong></td>
+                        <td style="color: green;">₱<?php echo number_format($interest_income_data['interest_income'] ?? 0, 2); ?></td>
+                    </tr>
+                    <tr>
                         <td><strong>Damage Losses</strong></td>
                         <td style="color: red;">-₱<?php echo number_format($damage_data['total_damage_loss'] ?? 0, 2); ?></td>
                     </tr>
+                    <tr>
+                        <td><strong>Net Revenue</strong></td>
+                        <td style="font-weight: bold; color: <?php echo (($sales_data['total_sales'] ?? 0) + ($interest_income_data['interest_income'] ?? 0) - ($damage_data['total_damage_loss'] ?? 0)) >= 0 ? 'green' : 'red'; ?>;">₱<?php echo number_format(($sales_data['total_sales'] ?? 0) + ($interest_income_data['interest_income'] ?? 0) - ($damage_data['total_damage_loss'] ?? 0), 2); ?></td>
+                    </tr>
                 </table>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Revenue Calculations:</div>
+                    <div class="calculation-formula">Net Revenue = Sales + Interest - Damage Losses</div>
+                    <ul class="calculation-steps">
+                        <li><strong>Sales Revenue:</strong> Total money earned from selling products to customers</li>
+                        <li><strong>Interest Income:</strong> Money earned from interest paid on loans</li>
+                        <li><strong>Damage Losses:</strong> Value of products that were damaged or spoiled</li>
+                        <li><strong>Average Transaction:</strong> ₱<?php echo number_format(($sales_data['total_sales'] ?? 0) / max(1, $sales_data['total_transactions']), 2); ?></li>
+                        <li><strong>Net Revenue:</strong> ₱<?php echo number_format(($sales_data['total_sales'] ?? 0) + ($interest_income_data['interest_income'] ?? 0) - ($damage_data['total_damage_loss'] ?? 0), 2); ?></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -855,10 +1076,26 @@ $customer_analysis_result = $db->query($customer_analysis_query);
                         <td>₱<?php echo number_format($inventory_data['total_cost_value'] ?? 0, 2); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Total Expense Count</strong></td>
-                        <td><?php echo ($expenses_data['total_expense_count'] ?? 0) + ($purchases_data['total_purchase_count'] ?? 0); ?></td>
+                        <td><strong>Period Inventory Change</strong></td>
+                        <td style="color: <?php echo $period_inventory_change >= 0 ? 'green' : 'red'; ?>;">₱<?php echo number_format($period_inventory_change, 2); ?></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Expenses</strong></td>
+                        <td style="font-weight: bold; color: red;">₱<?php echo number_format(($expenses_data['total_expenses'] ?? 0) + ($purchases_data['total_purchases'] ?? 0), 2); ?></td>
                     </tr>
                 </table>
+                
+                <div class="calculation-box">
+                    <div class="calculation-title">Expense Calculations:</div>
+                    <div class="calculation-formula">Total Expenses = Operating + Purchase + Inventory Change</div>
+                    <ul class="calculation-steps">
+                        <li><strong>Operating Expenses:</strong> Total money spent on running the cooperative (rent, utilities, salaries, etc.)</li>
+                        <li><strong>Purchase Costs:</strong> Total amount paid for products and supplies bought during this period</li>
+                        <li><strong>Inventory Cost:</strong> Current value of all products we have in stock</li>
+                        <li><strong>Period Inventory Change:</strong> Purchases (₱<?php echo number_format($inventory_movements_data['purchases_value'] ?? 0, 2); ?>) - Sales (₱<?php echo number_format($inventory_movements_data['sales_value'] ?? 0, 2); ?>) - Damage (₱<?php echo number_format($inventory_movements_data['damage_value'] ?? 0, 2); ?>) = ₱<?php echo number_format($period_inventory_change, 2); ?></li>
+                        <li><strong>Total Expenses:</strong> ₱<?php echo number_format(($expenses_data['total_expenses'] ?? 0) + ($purchases_data['total_purchases'] ?? 0), 2); ?></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -953,7 +1190,7 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     </div>
 </div>
 
-<!-- Monthly Trend and Expense Categories -->
+
 <div class="row">
     <!-- Monthly Sales Trend -->
     <div class="col-lg-8">
@@ -1038,6 +1275,90 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     </div>
 </div>
 
+<!-- Financial Insights & Analysis -->
+<div class="panel">
+    <div class="panel-heading">
+        <h4><i class="fa fa-lightbulb-o"></i> Financial Insights & Analysis</h4>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="insight-box">
+                    <div class="insight-title">Profitability Analysis</div>
+                    <ul>
+                        <li><strong>Operating Margin:</strong> <?php echo $total_cooperative_revenue > 0 ? number_format(($cooperative_profit_loss / $total_cooperative_revenue) * 100, 1) : 0; ?>% - <?php echo $cooperative_profit_loss >= 0 ? 'Healthy profitability' : 'Needs attention'; ?></li>
+                        <li><strong>Revenue Mix:</strong> Sales (<?php echo $total_cooperative_revenue > 0 ? number_format((($sales_data['total_sales'] ?? 0) / $total_cooperative_revenue) * 100, 1) : 0; ?>%) + Interest (<?php echo $total_cooperative_revenue > 0 ? number_format((($interest_income_data['interest_income'] ?? 0) / $total_cooperative_revenue) * 100, 1) : 0; ?>%)</li>
+                        <li><strong>Cost Efficiency:</strong> <?php echo $total_cooperative_revenue > 0 ? number_format((($total_cooperative_expenses) / $total_cooperative_revenue) * 100, 1) : 0; ?>% of revenue goes to expenses</li>
+                    </ul>
+                </div>
+                
+                <div class="insight-box">
+                    <div class="insight-title">Liquidity Analysis</div>
+                    <ul>
+                        <li><strong>Cash Position:</strong> ₱<?php echo number_format($loan_fund_data['total_loan_fund_balance'] ?? 0, 2); ?> in loan fund</li>
+                        <li><strong>Savings Coverage:</strong> ₱<?php echo number_format(($current_balances_data['total_current_balance'] ?? 0) / max(1, $loan_disbursements_data['total_disbursed'] ?? 1), 2); ?> in savings per ₱1 of loans</li>
+                        <li><strong>Asset Liquidity:</strong> <?php echo $net_assets > 0 ? 'Strong' : 'Weak'; ?> - Net assets: ₱<?php echo number_format($net_assets, 2); ?></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="insight-box">
+                    <div class="insight-title">Operational Efficiency</div>
+                    <ul>
+                        <li><strong>Inventory Turnover:</strong> <?php 
+                        $inventory_cost = $inventory_data['total_cost_value'] ?? 0;
+                        $cogs = $purchases_data['total_purchases'] ?? 0;
+                        echo $inventory_cost > 0 ? number_format($cogs / $inventory_cost, 2) : 'N/A'; 
+                        ?> times - <?php echo ($inventory_cost > 0 && ($cogs / $inventory_cost) > 2) ? 'Good turnover' : 'Monitor inventory'; ?></li>
+                        <li><strong>Average Transaction:</strong> ₱<?php echo number_format(($sales_data['total_sales'] ?? 0) / max(1, $sales_data['total_transactions']), 2); ?> per transaction</li>
+                        <li><strong>Customer Activity:</strong> <?php echo $customer_analysis_result->num_rows; ?> active customers in period</li>
+                    </ul>
+                </div>
+                
+                <div class="insight-box">
+                    <div class="insight-title">Cooperative Health Indicators</div>
+                    <ul>
+                        <li><strong>Member Engagement:</strong> <?php echo ($total_capital_data['total_members_all'] ?? 0); ?> total members, <?php echo $current_balances_data['active_accounts'] ?? 0; ?> active savers</li>
+                        <li><strong>Loan Performance:</strong> <?php echo ($loan_disbursements_data['total_disbursed'] ?? 0) > 0 ? number_format((($loan_repayments_data['total_repaid'] ?? 0) / $loan_disbursements_data['total_disbursed']) * 100, 1) : 0; ?>% recovery rate</li>
+                        <li><strong>Capital Adequacy:</strong> ₱<?php echo number_format(($total_capital_data['total_capital_all'] ?? 0) / max(1, $current_balances_data['total_current_balance'] ?? 1), 2); ?> capital per ₱1 of savings</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="calculation-box">
+            <div class="calculation-title">Key Performance Indicators Summary:</div>
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Profit Margin:</strong><br>
+                    <span style="font-size: 1.5em; color: <?php echo $cooperative_profit_loss >= 0 ? 'green' : 'red'; ?>;">
+                        <?php echo $total_cooperative_revenue > 0 ? number_format(($cooperative_profit_loss / $total_cooperative_revenue) * 100, 1) : 0; ?>%
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Asset Growth:</strong><br>
+                    <span style="font-size: 1.5em; color: blue;">
+                        ₱<?php echo number_format($net_assets, 0); ?>
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Loan Recovery:</strong><br>
+                    <span style="font-size: 1.5em; color: <?php echo (($loan_disbursements_data['total_disbursed'] ?? 0) > 0 && (($loan_repayments_data['total_repaid'] ?? 0) / $loan_disbursements_data['total_disbursed']) > 0.8) ? 'green' : 'orange'; ?>;">
+                        <?php echo ($loan_disbursements_data['total_disbursed'] ?? 0) > 0 ? number_format((($loan_repayments_data['total_repaid'] ?? 0) / $loan_disbursements_data['total_disbursed']) * 100, 1) : 0; ?>%
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Member Participation:</strong><br>
+                    <span style="font-size: 1.5em; color: purple;">
+                        <?php echo ($total_capital_data['total_members_all'] ?? 0); ?>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Financial Ratios -->
 <div class="row">
     <div class="col-lg-12">
@@ -1054,28 +1375,73 @@ $customer_analysis_result = $db->query($customer_analysis_query);
                 ?>
                 <div class="row">
                     <div class="col-md-3">
-                        <strong>Gross Profit Margin:</strong>
-                        <p class="text-primary"><?php echo $revenue > 0 ? number_format((($revenue - ($purchases_data['total_purchases'] ?? 0)) / $revenue) * 100, 1) : 0; ?>%</p>
+                        <div class="ratio-card">
+                            <div class="ratio-label">Gross Profit Margin</div>
+                            <div class="ratio-value"><?php echo $revenue > 0 ? number_format((($revenue - ($purchases_data['total_purchases'] ?? 0)) / $revenue) * 100, 1) : 0; ?>%</div>
+                            <div class="ratio-description">Measures profitability after direct costs</div>
+                        </div>
+                        <div class="calculation-box">
+                            <div class="calculation-title">Gross Profit Margin Calculation:</div>
+                            <div class="calculation-formula">(Revenue - Cost of Goods Sold) ÷ Revenue × 100</div>
+                            <ul class="calculation-steps">
+                                <li>Revenue: ₱<?php echo number_format($revenue, 2); ?></li>
+                                <li>Cost of Goods Sold: ₱<?php echo number_format($purchases_data['total_purchases'] ?? 0, 2); ?></li>
+                                <li>Gross Profit: ₱<?php echo number_format($revenue - ($purchases_data['total_purchases'] ?? 0), 2); ?></li>
+                                <li>Margin: <?php echo $revenue > 0 ? number_format((($revenue - ($purchases_data['total_purchases'] ?? 0)) / $revenue) * 100, 1) : 0; ?>%</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <strong>Net Profit Margin:</strong>
-                        <p class="<?php echo $profit_loss >= 0 ? 'text-success' : 'text-danger'; ?>">
-                            <?php echo $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0; ?>%
-                        </p>
+                        <div class="ratio-card">
+                            <div class="ratio-label">Net Profit Margin</div>
+                            <div class="ratio-value <?php echo $profit_loss >= 0 ? 'text-success' : 'text-danger'; ?>"><?php echo $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0; ?>%</div>
+                            <div class="ratio-description">Overall profitability after all expenses</div>
+                        </div>
+                        <div class="calculation-box">
+                            <div class="calculation-title">Net Profit Margin Calculation:</div>
+                            <div class="calculation-formula">(Net Profit ÷ Revenue) × 100</div>
+                            <ul class="calculation-steps">
+                                <li>Net Profit: ₱<?php echo number_format($profit_loss, 2); ?></li>
+                                <li>Total Revenue: ₱<?php echo number_format($revenue, 2); ?></li>
+                                <li>Net Margin: <?php echo $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0; ?>%</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <strong>Inventory Turnover:</strong>
-                        <p class="text-info"><?php 
-                        $inventory_cost = $inventory_data['total_cost_value'] ?? 0;
-                        $cogs = $purchases_data['total_purchases'] ?? 0;
-                        echo $inventory_cost > 0 ? number_format($cogs / $inventory_cost, 2) : 'N/A'; 
-                        ?></p>
+                        <div class="ratio-card">
+                            <div class="ratio-label">Inventory Turnover</div>
+                            <div class="ratio-value"><?php 
+                            $inventory_cost = $inventory_data['total_cost_value'] ?? 0;
+                            $cogs = $purchases_data['total_purchases'] ?? 0;
+                            echo $inventory_cost > 0 ? number_format($cogs / $inventory_cost, 2) : 'N/A'; 
+                            ?></div>
+                            <div class="ratio-description">How quickly inventory is sold</div>
+                        </div>
+                        <div class="calculation-box">
+                            <div class="calculation-title">Inventory Turnover Calculation:</div>
+                            <div class="calculation-formula">Cost of Goods Sold ÷ Average Inventory Value</div>
+                            <ul class="calculation-steps">
+                                <li>Cost of Goods Sold: ₱<?php echo number_format($cogs, 2); ?></li>
+                                <li>Inventory Cost Value: ₱<?php echo number_format($inventory_cost, 2); ?></li>
+                                <li>Turnover Rate: <?php echo $inventory_cost > 0 ? number_format($cogs / $inventory_cost, 2) : 'N/A'; ?> times</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <strong>Return on Sales:</strong>
-                        <p class="<?php echo $profit_loss >= 0 ? 'text-success' : 'text-danger'; ?>">
-                            <?php echo $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0; ?>%
-                        </p>
+                        <div class="ratio-card">
+                            <div class="ratio-label">Return on Sales</div>
+                            <div class="ratio-value <?php echo $profit_loss >= 0 ? 'text-success' : 'text-danger'; ?>"><?php echo $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0; ?>%</div>
+                            <div class="ratio-description">Efficiency of generating profit from sales</div>
+                        </div>
+                        <div class="calculation-box">
+                            <div class="calculation-title">Return on Sales Calculation:</div>
+                            <div class="calculation-formula">(Net Profit ÷ Revenue) × 100</div>
+                            <ul class="calculation-steps">
+                                <li>Net Profit: ₱<?php echo number_format($profit_loss, 2); ?></li>
+                                <li>Total Revenue: ₱<?php echo number_format($revenue, 2); ?></li>
+                                <li>ROS: <?php echo $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) : 0; ?>%</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>

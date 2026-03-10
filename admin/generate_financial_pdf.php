@@ -547,6 +547,122 @@ while($customer = $customer_analysis_result->fetch_assoc()) {
 }
 $pdf->Ln(3);
 
+// Financial Calculations Section
+$pdf->SectionTitle('FINANCIAL CALCULATIONS & EXPLANATIONS');
+$pdf->SubSectionTitle('How Key Metrics Are Calculated');
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Total Revenue Calculation:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, 'Sales Revenue + Interest Income', 0, 1, 'L');
+$pdf->Cell(0, 6, $pdf->FormatCurrency($total_cooperative_revenue), 0, 1, 'R');
+$pdf->Cell(0, 6, '₱' . number_format($sales_data['total_sales'] ?? 0, 2) . ' + ₱' . number_format($interest_income_data['interest_income'] ?? 0, 2), 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Total Expenses Calculation:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, 'Operating Expenses + Purchase Costs', 0, 1, 'L');
+$pdf->Cell(0, 6, $pdf->FormatCurrency($total_cooperative_expenses), 0, 1, 'R');
+$pdf->Cell(0, 6, '₱' . number_format($expenses_data['total_expenses'] ?? 0, 2) . ' + ₱' . number_format($purchases_data['total_purchases'] ?? 0, 2), 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Net Profit/Loss Calculation:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, 'Total Revenue - Total Expenses', 0, 1, 'L');
+$pdf->Cell(0, 6, $pdf->FormatCurrency(abs($cooperative_profit_loss)), 0, 1, 'R');
+$pdf->Cell(0, 6, '₱' . number_format($total_cooperative_revenue, 2) . ' - ₱' . number_format($total_cooperative_expenses, 2), 0, 1, 'R');
+$pdf->Ln(5);
+
+if ($cooperative_tables_exist) {
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(0, 6, 'Net Assets Calculation:', 0, 1, 'L');
+    $pdf->SetFont('Arial', '', 9);
+    $pdf->Cell(0, 6, 'Savings + Capital + Interest - Outstanding Loans', 0, 1, 'L');
+    $pdf->Cell(0, 6, $pdf->FormatCurrency($net_assets), 0, 1, 'R');
+    $pdf->Cell(0, 6, '₱' . number_format($savings_balance['current_balance'] ?? 0, 2) . ' + ₱' . number_format($total_capital_data['total_capital_all'] ?? 0, 2) . ' + ₱' . number_format($interest_income_data['interest_income'] ?? 0, 2) . ' - ₱' . number_format($loan_portfolio_data['total_approved_loans'] ?? 0, 2), 0, 1, 'R');
+    $pdf->Ln(5);
+}
+
+$pdf->Ln(3);
+
+// Financial Ratios with Explanations
+$pdf->SectionTitle('FINANCIAL RATIOS WITH CALCULATIONS');
+$pdf->SubSectionTitle('Ratio Formulas and Interpretations');
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Gross Profit Margin:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, '(Revenue - COGS) ÷ Revenue × 100', 0, 1, 'L');
+$pdf->Cell(0, 6, $revenue > 0 ? number_format((($revenue - $cogs) / $revenue) * 100, 1) . '%' : '0.0%', 0, 1, 'R');
+$pdf->Cell(0, 6, 'Measures profitability after direct costs', 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Net Profit Margin:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, '(Net Profit ÷ Revenue) × 100', 0, 1, 'L');
+$pdf->Cell(0, 6, $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) . '%' : '0.0%', 0, 1, 'R');
+$pdf->Cell(0, 6, 'Overall profitability after all expenses', 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Inventory Turnover:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, 'COGS ÷ Average Inventory Value', 0, 1, 'L');
+$pdf->Cell(0, 6, $inventory_cost > 0 ? number_format($cogs / $inventory_cost, 2) : 'N/A', 0, 1, 'R');
+$pdf->Cell(0, 6, 'How quickly inventory is sold', 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Return on Sales:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, '(Net Profit ÷ Revenue) × 100', 0, 1, 'L');
+$pdf->Cell(0, 6, $revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) . '%' : '0.0%', 0, 1, 'R');
+$pdf->Cell(0, 6, 'Efficiency of generating profit from sales', 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->Ln(3);
+
+// Financial Health Insights
+$pdf->SectionTitle('FINANCIAL HEALTH INSIGHTS');
+$pdf->SubSectionTitle('Performance Analysis and Recommendations');
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Profitability Analysis:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$profitability_text = $profit_loss >= 0 ? 'The cooperative is generating profit' : 'The cooperative is operating at a loss';
+$pdf->Cell(0, 6, $profitability_text, 0, 1, 'L');
+$pdf->Cell(0, 6, 'Margin: ' . ($revenue > 0 ? number_format(($profit_loss / $revenue) * 100, 1) . '%' : '0.0%'), 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Asset Growth:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 6, 'Net assets represent cooperative financial position', 0, 1, 'L');
+$pdf->Cell(0, 6, $pdf->FormatCurrency($net_assets), 0, 1, 'R');
+$pdf->Ln(5);
+
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Revenue Diversification:', 0, 1, 'L');
+$pdf->SetFont('Arial', '', 9);
+$diversification_text = ($interest_income_data['interest_income'] ?? 0) > 0 ? 'Interest income contributes to revenue diversity' : 'Revenue relies primarily on sales operations';
+$pdf->Cell(0, 6, $diversification_text, 0, 1, 'L');
+$pdf->Ln(5);
+
+if ($cooperative_tables_exist) {
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(0, 6, 'Liquidity Position:', 0, 1, 'L');
+    $pdf->SetFont('Arial', '', 9);
+    $liquidity_text = $net_assets > 0 ? 'Strong financial position' : 'Needs attention';
+    $pdf->Cell(0, 6, $liquidity_text, 0, 1, 'L');
+    $pdf->Cell(0, 6, $pdf->FormatCurrency($loan_fund_data['total_loan_fund_balance'] ?? 0), 0, 1, 'R');
+    $pdf->Ln(5);
+}
+
+$pdf->Ln(3);
+
 // Financial Ratios
 $pdf->SectionTitle('FINANCIAL RATIOS & KEY PERFORMANCE INDICATORS');
 $pdf->SubSectionTitle('Profitability Analysis');
