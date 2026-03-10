@@ -2,15 +2,15 @@
 <?php
 
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
 
 
 
 if (
     !isset($_SESSION['is_login_yes'], $_SESSION['user_id'], $_SESSION['usertype'])
     || $_SESSION['is_login_yes'] != 'yes'
-    || !in_array((int)$_SESSION['usertype'], [1, 2]) // allow usertype 1 OR 2
+    || !in_array((int)$_SESSION['usertype'], [1, 2]) 
 ) {
     die("Unauthorized access.");
 }

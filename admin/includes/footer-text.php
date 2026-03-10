@@ -4,7 +4,7 @@
     &copy; 2025 - <?php echo date('Y'); ?>
     <b style="color: #26a69a;">OCC Employees Credit Cooperative</b><br>
     <small>
-      Developed by <b style="color: #555;">BSIT Student - Opol Community College</b><br>
+      Developed by <b style="color: #555;">Cesar Paje Besinga -BSIT Student - Opol Community College</b><br>
       <!-- <b>Developers:</b> Cesar Besinga, Kirk Macalagin Lago, Adrian Dave Vallejos, Elaiza Loretche -->
     </small>
   </div>

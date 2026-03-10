@@ -112,7 +112,6 @@ $savings_total = $db->query("
 
 ?>
 
-<link rel="stylesheet" href="../css/mobile-dashboard.css">
 <style>
     .navbar-brand {
         display: flex;
@@ -156,106 +155,6 @@ $savings_total = $db->query("
     <!-- Page container -->
     <div class="page-container">
 
-        <div class="mobile-view">
-
-
-            <div class="mobile-header">
-                Hello, <?= $_SESSION['fullname'] ?>
-                <button id="toggle-balance" title="Show/Hide Balance" style="background:none; border:none; color:#fff; font-size:18px;">
-                    <i class="icon-eye"></i>
-                </button>
-            </div>
-
-
-            <div class="mobile-balance-card">
-
-                <div class="balance-tabs">
-                    <?php if ($_SESSION['member_type'] !== 'associate'): ?>
-                        <div class="tab active" data-target="#capital">Capital Share</div>
-                    <?php endif; ?>
-                    <div class="tab " data-target="#savings">Savings</div>
-                </div>
-
-                <div class="tab-content">
-
-                    <div id="capital" class="tab-pane active">
-                        <?php if ($_SESSION['member_type'] !== 'associate'): ?>
-                            <h2 class="balance-amount">₱ <?= number_format($capital_share, 2) ?></h2>
-                        <?php endif; ?>
-                    </div>
-
-                    <div id="savings" class="tab-pane">
-                        <h2 class="balance-amount">₱ <?= number_format($savings_total, 2) ?></h2>
-                    </div>
-
-                </div>
-            </div>
-
-
-
-
-            <div class="mobile-actions">
-                <a href="capital_share.php"><i class="icon-credit-card"></i>Deposit</a>
-                <a href="capital_share.php"><i class="icon-"></i>withdraw</a>
-                <a href="loan.php"> <i class="icon-coins"></i>Loan</a>
-                <a href="transaction_history.php"><i class="icon-history"></i>History</a>
-            </div>
-
-
-            <div class="mobile-loan-summary">
-                <b>Loan Overview</b>
-                <div class="loan-card">
-                    <div>
-                        <small>Disbursed</small>
-                        <h4>₱ 0.00</h4>
-                    </div>
-                    <div>
-                        <small>Repaid</small>
-                        <h4>₱ 0.00</h4>
-                    </div>
-                    <div>
-                        <small>Outstanding</small>
-                        <h4>₱ 0.00</h4>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- <div class="mobile-commercial">
-
-                <div class="commercial-header">
-                    Promotions
-                </div>
-
-                <div class="commercial-slider" id="commercialSlider">
-
-                    <div class="commercial-item">
-                        <img src="../images/no-image.png">
-                        <div class="commercial-info">
-                            <h4>Low Interest Loan</h4>
-                            <p>now with only 1% interest.</p>
-                        </div>
-                    </div>
-
-                    <div class="commercial-item">
-                        <img src="../images/no-image.png">
-                        <div class="commercial-info">
-                            <h4>Savings Bonus</h4>
-                            <p> save more.</p>
-                        </div>
-                    </div>
-
-                    <div class="commercial-item">
-                        <img src="../images/no-image.png">
-                        <div class="commercial-info">
-                            <h4>Member Benefits</h4>
-                            <p>Exclusive offers for members.</p>
-                        </div>
-                    </div>
-
-                </div> -->
-
-        </div>
 
 
     </div>
@@ -273,8 +172,6 @@ $savings_total = $db->query("
             <!-- Page header -->
             <div class="page-header page-header-default"></div>
             <!-- /page header -->
-
-
 
 
             <!-- Content area -->
@@ -306,32 +203,7 @@ $savings_total = $db->query("
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="panel panel-body">
-                            <div class="media no-margin">
-                                <div class="media-left media-middle">
-                                    <i class="icon-file-text icon-3x text-indigo-400"></i>
-                                </div>
-                                <div class="media-body text-right">
-                                    <h3 class="no-margin text-semibold"><?= $customer_total ?></h3>
-                                    <span class="text-uppercase text-size-mini text-muted">Loans</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="panel panel-body">
-                            <div class="media no-margin">
-                                <div class="media-left media-middle">
-                                    <i class="icon-history icon-3x text-blue-400"></i>
-                                </div>
-                                <div class="media-body text-right">
-                                    <h3 class="no-margin text-semibold"><?= $supplier_total ?></h3>
-                                    <span class="text-uppercase text-size-mini text-muted">Transactions</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
                 </div>
                 <div class="panel panel-white">
                     <div class="panel-heading">
@@ -416,25 +288,6 @@ $savings_total = $db->query("
     <!-- /page container -->
 </body>
 
-<div class="mobile-bottom-nav">
-    <a href="transaction_history.php">
-        <i class="icon-history"></i>
-        transaction
-    </a>
-
-    <a href="dashboard.php" class="active">
-        <i class="icon-home"></i>
-        Home
-    </a>
-    <a href="loan.php">
-        <i class="icon-coins"></i>
-        Loans
-    </a>
-    <a href="../admin/profile.php">
-        <i class="icon-user"></i>
-        Profile
-    </a>
-</div>
 <?php require('../admin/includes/footer.php'); ?>
 
 
@@ -449,67 +302,8 @@ $savings_total = $db->query("
 
 
 <script type="text/javascript">
-    const tabs = document.querySelectorAll('.balance-tabs .tab');
-    const panes = document.querySelectorAll('.tab-content .tab-pane');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            panes.forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            document.querySelector(tab.dataset.target).classList.add('active');
-        });
-    });
-
-    // Toggle show/hide balance
-    document.getElementById('toggle-balance').addEventListener('click', function() {
-        const amounts = document.querySelectorAll('.balance-amount');
-        amounts.forEach(a => a.classList.toggle('hide'));
-        this.querySelector('i').classList.toggle('icon-eye-blocked');
-    });
-
     $(function() {
         $('[data-toggle="tooltip"]').tooltip();
 
     });
-
-    $('#form-seller').on('submit', function(e) {
-        $(':input[type="submit"]').prop('disabled', true);
-        var data = $("#form-seller").serialize();
-        $.ajax({
-            type: 'POST',
-            url: '../transaction.php',
-            data: data,
-            success: function(msg) {
-                location.reload();
-            },
-            error: function(msg) {
-                alert('Something went wrong!');
-            }
-        });
-        return false;
-    });
-
-    const slider = document.getElementById('commercialSlider');
-
-    let scrollAmount = 0;
-
-    function autoScrollSlider() {
-
-        const itemWidth = slider.querySelector('.commercial-item').offsetWidth + 16;
-
-        scrollAmount += itemWidth;
-
-        if (scrollAmount >= slider.scrollWidth - slider.clientWidth) {
-            scrollAmount = 0;
-        }
-
-        slider.scrollTo({
-            left: scrollAmount,
-            behavior: 'smooth'
-        });
-
-    }
-
-    setInterval(autoScrollSlider, 5000);
 </script>

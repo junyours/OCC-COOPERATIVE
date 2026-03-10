@@ -26,98 +26,6 @@ $result = $db->query($query);
 	}
 
 
-	/* Mobile App Style */
-	@media (max-width:768px) {
-		.content-wrapper {
-			padding: 10px;
-		}
-
-		.panel {
-			border-radius: 14px;
-			box-shadow: 0 4px 10px rgba(0, 0, 0, .06);
-		}
-
-		.col-sm-6.col-md-3 {
-			margin-bottom: 10px;
-		}
-
-		.panel .icon-3x {
-			font-size: 28px !important;
-		}
-
-		.table {
-			display: block;
-			overflow-x: auto;
-			white-space: nowrap;
-		}
-
-		.navbar-nav {
-			display: none;
-		}
-
-		body {
-			padding-bottom: 75px;
-		}
-	}
-
-	.mobile-bottom-nav {
-		display: none;
-	}
-
-	@media (max-width:768px) {
-		.mobile-bottom-nav {
-			display: flex;
-			position: fixed;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			background: #fff;
-			border-top: 1px solid #ddd;
-			justify-content: space-around;
-			padding: 8px 0;
-			z-index: 9999;
-		}
-
-		.mobile-bottom-nav a {
-			text-align: center;
-			font-size: 11px;
-			color: #444;
-		}
-
-		.mobile-bottom-nav i {
-			display: block;
-			font-size: 20px;
-			margin-bottom: 2px;
-		}
-
-		.mobile-bottom-nav a.active {
-			color: #26a69a;
-		}
-	}
-
-	@media (max-width:768px) {
-
-		/* Hide desktop navbar */
-		.navbar.navbar-inverse {
-			display: none !important;
-		}
-
-		/* Hide desktop page header */
-		.page-header {
-			display: none !important;
-		}
-
-		/* Hide breadcrumb */
-		.breadcrumb-line {
-			display: none !important;
-		}
-
-		/* Optional: remove extra top spacing */
-		.content-wrapper {
-			padding-top: 10px !important;
-		}
-
-	}
 </style>
 
 <body class="layout-boxed navbar-top">
@@ -246,53 +154,21 @@ $result = $db->query($query);
 				<!-- /content area -->
 				<?php require('includes/footer-text.php'); ?>
 
+
 			</div>
 			<!-- /main content -->
+
 
 		</div>
 		<!-- /page content -->
 
+
 	</div>
 	<!-- /page container -->
-	<div class="modal fade" id="confirmModal" tabindex="-1">
-		<div class="modal-dialog modal-sm">
-			<div class="modal-content">
-				<div class="modal-header bg-teal-400">
-					<h5 class="modal-title text-white">Confirm Update</h5>
-				</div>
-				<center>Are you sure you want to save changes?</center>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn bg-teal-400" id="confirmSave">Save</button>
-				</div>
-			</div>
-		</div>
-	</div>
 
 
-</body>
-
-
-<div class="mobile-bottom-nav">
-	<a href="../member/transaction_history.php">
-		<i class="icon-history"></i>
-		Transaction
-	</a>
-
-	<a href="../member/dashboard.php">
-		<i class="icon-home"></i>
-		Home
-	</a>
-	<a href="loan.php">
-		<i class="icon-coins"></i>
-		Loans
-	</a>
-	<a href="../admin/profile.php" class="active">
-		<i class="icon-user"></i>
-		Profile
-	</a>
-</div>
 <?php require('includes/footer.php'); ?>
+
 
 <script type="text/javascript" src="../assets/js/plugins/tables/datatables/datatables.min.js"></script>
 <script type="text/javascript" src="../assets/js/plugins/notifications/jgrowl.min.js"></script>
