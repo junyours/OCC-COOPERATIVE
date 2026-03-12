@@ -207,6 +207,7 @@ if (isset($_POST['save-cashier'])) {
         echo 0;
     }
 }
+
 if (isset($_POST['update-cashier'])) {
 
     require 'db_connect.php';
@@ -2924,6 +2925,9 @@ if (isset($_POST['approve_loan'])) {
         $monthly_saving = round($monthly_saving, 2);
         $monthly_share  = round($monthly_share, 2);
 
+        // Calculate total monthly savings and share capital for the entire term
+        $total_monthly_savings = round($monthly_saving * $term_value, 2);
+        $total_monthly_share = round($monthly_share * $term_value, 2);
 
         $total_due = round(
             $approved_amount +
@@ -2931,8 +2935,8 @@ if (isset($_POST['approve_loan'])) {
                 $processing_fee +
                 $insurance_fee +
                 $doc_fee +
-                $monthly_saving +
-                $monthly_share,
+                $total_monthly_savings +
+                $total_monthly_share,
             2
         );
 
@@ -3052,6 +3056,7 @@ if (isset($_POST['approve_loan'])) {
     exit;
 }
 
+
 // if (isset($_POST['approve_loan'])) {
 //     require('db_connect.php');
 
@@ -3068,147 +3073,132 @@ if (isset($_POST['approve_loan'])) {
 //         exit;
 //     }
 
-
 //     $db->begin_transaction();
 //     try {
-
 
 //         $term_parts = explode(' ', $approved_term);
 //         $term_value = (int)($term_parts[0] ?? 0);
 //         $term_unit = $term_parts[1] ?? 'months';
 
-
-
-
-//         $loanQry = $db->query("
-//         SELECT loan_type_id
-//         FROM loans
-//         WHERE loan_id = $loan_id
-//         FOR UPDATE
-//        ");
-
-//         if ($loanQry->num_rows == 0)
-//             throw new Exception("Loan not found");
-
-
+//         $loanQry = $db->query("SELECT loan_type_id FROM loans WHERE loan_id = $loan_id FOR UPDATE");
+//         if ($loanQry->num_rows == 0) throw new Exception("Loan not found");
 //         $loan = $loanQry->fetch_assoc();
 
-
-
-
-//         $typeQry = $db->query("
-// SELECT interest_rate, payment_frequency
-// FROM loan_types
-// WHERE loan_type_id = {$loan['loan_type_id']}
-// ");
-
-
-//         if ($typeQry->num_rows == 0)
-//             throw new Exception("Loan type config missing");
+//         $typeQry = $db->query("SELECT interest_rate, payment_frequency FROM loan_types WHERE loan_type_id = {$loan['loan_type_id']}");
+//         if ($typeQry->num_rows == 0) throw new Exception("Loan type config missing");
 //         $type = $typeQry->fetch_assoc();
+
 //         $interest_rate = (float)$type['interest_rate'];
 //         $frequency = $type['payment_frequency'];
 
-
-
-
-
 //         $fee_type = 'percent';
 //         $fee_value = 0;
+//         $insurance_rate = 0;
+//         $doc_stamp_fee = 0;
+//         $monthly_saving = 0;
+//         $monthly_share = 0;
 
 //         $feeQry = $db->query("
-//         SELECT setting_key, setting_value
-// FROM system_settings
-// WHERE setting_key IN
-// ('loan_processing_fee_type','loan_processing_fee_value')
-// ");
-
+//             SELECT setting_key, setting_value
+//             FROM system_settings
+//             WHERE setting_key IN (
+//                 'loan_processing_fee_type',
+//                 'loan_processing_fee_value',
+//                 'loan_insurance_fee',
+//                 'loan_doc_stamp_fee',
+//                 'monthly_savings',
+//                 'monthly_share_capital'
+//             )
+//         ");
 
 //         while ($row = $feeQry->fetch_assoc()) {
-//             if ($row['setting_key'] == "loan_processing_fee_type")
-//                 $fee_type = $row['setting_value'];
-//             if ($row['setting_key'] == "loan_processing_fee_value")
-//                 $fee_value = (float)$row['setting_value'];
+//             switch ($row['setting_key']) {
+//                 case "loan_processing_fee_type":
+//                     $fee_type = $row['setting_value'];
+//                     break;
+//                 case "loan_processing_fee_value":
+//                     $fee_value = (float)$row['setting_value'];
+//                     break;
+//                 case "loan_insurance_fee":
+//                     $insurance_rate = (float)$row['setting_value'];
+//                     break;
+//                 case "loan_doc_stamp_fee":
+//                     $doc_stamp_fee = (float)$row['setting_value'];
+//                     break;
+//                 case "monthly_savings":
+//                     $monthly_saving = (float)$row['setting_value'];
+//                     break;
+//                 case "monthly_share_capital":
+//                     $monthly_share = (float)$row['setting_value'];
+//                     break;
+//             }
 //         }
 
 
 
-//         if ($fee_type == "percent")
-//             $processing_fee =
-//                 $approved_amount * ($fee_value / 100);
-//         else
-//             $processing_fee =
-//                 $fee_value;
+
+//         if ($fee_type == "percent") {
+//             $processing_fee = round($approved_amount * ($fee_value / 100), 2);
+//         } else {
+//             $processing_fee = round($fee_value, 2);
+//         }
+
+//         $insurance_fee = round($approved_amount * ($insurance_rate / 100), 2);
+
+//         $doc_fee = round($approved_amount * ($doc_stamp_fee / 100), 2);
 
 
 //         if ($term_unit == "months") {
-
-//             $total_interest =
-//                 $approved_amount *
-//                 ($interest_rate / 100) *
-//                 $term_value;
+//             $total_interest = round($approved_amount * ($interest_rate / 100) * $term_value, 2);
 //         } elseif ($term_unit == "weeks") {
-
 //             $months = $term_value / 4;
-
-//             $total_interest =
-//                 $approved_amount *
-//                 ($interest_rate / 100) *
-//                 $months;
+//             $total_interest = round($approved_amount * ($interest_rate / 100) * $months, 2);
 //         } else {
-
 //             $months = $term_value / 30;
-
-//             $total_interest =
-//                 $approved_amount *
-//                 ($interest_rate / 100) *
-//                 $months;
+//             $total_interest = round($approved_amount * ($interest_rate / 100) * $months, 2);
 //         }
 
 
-//         $total_due =
+//         $monthly_saving = round($monthly_saving, 2);
+//         $monthly_share  = round($monthly_share, 2);
+
+
+//         $total_due = round(
 //             $approved_amount +
-//             $total_interest +
-//             $processing_fee;
-
-
-//         $principal_due =
-//             round($approved_amount / $term_value, 2);
-
-//         $interest_due =
-//             round($total_interest / $term_value, 2);
-
-//         $fee_due =
-//             round($processing_fee / $term_value, 2);
-
-//         $schedule_total =
-//             round($principal_due + $interest_due + $fee_due, 2);
+//                 $total_interest +
+//                 $processing_fee +
+//                 $insurance_fee +
+//                 $doc_fee +
+//                 $monthly_saving +
+//                 $monthly_share,
+//             2
+//         );
 
 
 //         $stmt = $db->prepare("
-// UPDATE loans
-
-// SET
-
-// status='approved',
-// approved_amount=?,
-// interest_rate=?,
-// term_value=?,
-// term_unit=?,
-// approved_date=?,
-// total_interest=?,
-// total_due=?
-
-// WHERE loan_id=?
-
+//     UPDATE loans
+//     SET status='approved',
+//         fund_id=?,
+//         approved_amount=?,
+//         service_charge=?,
+//         insurance=?,
+//         doc_stamp_fee=?,
+//         interest_rate=?,
+//         term_value=?,
+//         term_unit=?,
+//         approved_date=?,
+//         total_interest=?,
+//         total_due=?
+//     WHERE loan_id=?
 // ");
 
-
 //         $stmt->bind_param(
-
-//             "ddissddi",
-
+//             "idddddissddi",
+//             $fund_id,
 //             $approved_amount,
+//             $processing_fee,
+//             $insurance_fee,
+//             $doc_fee,
 //             $interest_rate,
 //             $term_value,
 //             $term_unit,
@@ -3216,96 +3206,90 @@ if (isset($_POST['approve_loan'])) {
 //             $total_interest,
 //             $total_due,
 //             $loan_id
-
 //         );
+
 //         $stmt->execute();
 
-
 //         if ($fund_id > 0) {
-
 //             $fundQry = $db->query("SELECT current_balance FROM tbl_loan_fund WHERE fund_id=$fund_id FOR UPDATE");
-//             if ($fundQry->num_rows == 0) {
-//                 throw new Exception("Selected fund not found");
-//             }
+//             if ($fundQry->num_rows == 0) throw new Exception("Selected fund not found");
+
 //             $fund = $fundQry->fetch_assoc();
 //             $new_balance = $fund['current_balance'] - $approved_amount;
-//             if ($new_balance < 0) {
+
+//             if ($new_balance < 0)
 //                 throw new Exception("Insufficient fund balance to approve loan");
-//             }
 
 //             $stmtFund = $db->prepare("UPDATE tbl_loan_fund SET current_balance=? WHERE fund_id=?");
 //             $stmtFund->bind_param("di", $new_balance, $fund_id);
 //             $stmtFund->execute();
 //         }
-//         // =====================================================
-//         // DELETE OLD SCHEDULE (IMPORTANT)
-//         // =====================================================
-
 
 //         $db->query("DELETE FROM loan_schedule WHERE loan_id=$loan_id");
 
+//         $stmt2 = $db->prepare("
+//             INSERT INTO loan_schedule(
+//                 loan_id, due_date, principal_due, interest_due, total_due, status
+//             ) VALUES (?, ?, ?, ?, ?, 'pending')
+//         ");
 
+//         $base_total_due = round($total_due / $term_value, 2);
+//         $base_interest_due = round($total_interest / $term_value, 2);
 
-//         $stmt2 = $db->prepare(" INSERT INTO loan_schedule(loan_id, due_date, principal_due, interest_due, total_due, status)
-//                       VALUES(?,?,?,?,?,'pending')");
-
-
+//         $running_total = 0;
 
 //         for ($i = 1; $i <= $term_value; $i++) {
+
 //             if ($frequency == "monthly")
-//                 $due_date =
-//                     date("Y-m-d", strtotime("+$i month", strtotime($today)));
+//                 $due_date = date("Y-m-d", strtotime("+$i month", strtotime($today)));
 //             elseif ($frequency == "weekly")
-//                 $due_date =
-//                     date("Y-m-d", strtotime("+$i week", strtotime($today)));
+//                 $due_date = date("Y-m-d", strtotime("+$i week", strtotime($today)));
 //             else
 //                 $due_date = date("Y-m-d", strtotime("+$i day", strtotime($today)));
-//             $principal = $principal_due;
-//             $interest = $interest_due + $fee_due;
-//             $total = $schedule_total;
 
+//             if ($i == $term_value) {
+//                 $schedule_total = round($total_due - $running_total, 2);
+//             } else {
+//                 $schedule_total = $base_total_due;
+//             }
+
+//             $interest_due = $base_interest_due;
+//             $principal_due = round($schedule_total - $interest_due, 2);
+
+//             $running_total += $schedule_total;
 
 //             $stmt2->bind_param(
 //                 "isddd",
 //                 $loan_id,
 //                 $due_date,
-//                 $principal,
-//                 $interest,
-//                 $total
-
+//                 $principal_due,
+//                 $interest_due,
+//                 $schedule_total
 //             );
+
 //             $stmt2->execute();
 //         }
 
 //         $details = [
 //             "loan_id" => $loan_id,
 //             "approved_amount" => $approved_amount,
-//             "interest_rate" => $interest_rate,
-//             "processing_fee" => $processing_fee,
-//             "total_interest" => $total_interest,
 //             "total_due" => $total_due,
 //             "user_id" => $user_id,
 //             "date" => $today
 //         ];
 
-//         $json =
-//             $db->real_escape_string(json_encode($details));
-
-//         $db->query("
-//        INSERT INTO tbl_history
-//        (details, history_type, field_status)
-//         VALUES
-//          ('$json', 56, 0)");
+//         $json = $db->real_escape_string(json_encode($details));
+//         $db->query("INSERT INTO tbl_history (details, history_type, field_status) VALUES ('$json', 56, 0)");
 
 //         $db->commit();
 //         echo "1";
 //     } catch (Exception $e) {
 //         $db->rollback();
-//         echo "Error : " . $e->getMessage();
+//         echo "Error: " . $e->getMessage();
 //     }
 //     exit;
 // }
-
+    
 
 if (isset($_GET['loan_receipt'])) {
     require('db_connect.php');
@@ -3318,6 +3302,7 @@ if (isset($_GET['loan_receipt'])) {
     require('admin/loan_receipt.php');
     exit;
 }
+
 
 
 
@@ -3444,7 +3429,7 @@ if (isset($_POST['cancelledloan'])) {
         if ($fund_id <= 0)
             throw new Exception("No fund linked to this loan");
 
-        // Lock fund
+     
         $fundQry = $db->query("
             SELECT current_balance
             FROM tbl_loan_fund
@@ -3466,7 +3451,7 @@ if (isset($_POST['cancelledloan'])) {
         $stmtFund->bind_param("di", $new_balance, $fund_id);
         $stmtFund->execute();
 
-        // Update loan
+       
         $stmt = $db->prepare("
             UPDATE loans
             SET status='canceled'
@@ -3475,10 +3460,9 @@ if (isset($_POST['cancelledloan'])) {
         $stmt->bind_param("i", $loan_id);
         $stmt->execute();
 
-        // Delete schedule
+        
         $db->query("DELETE FROM loan_schedule WHERE loan_id=$loan_id");
 
-        // History
         $details = [
             "loan_id" => $loan_id,
             "approved_amount" => $approved_amount,
@@ -3508,7 +3492,7 @@ function applyLoanPenalty($db, $loan_id)
 {
     $today = date("Y-m-d");
 
-    // ---------------- GET SETTINGS ----------------
+   
     $settings = [];
     $res = $db->query("
         SELECT setting_key, setting_value
@@ -3582,43 +3566,6 @@ function applyLoanPenalty($db, $loan_id)
         $stmt2->execute();
     }
 }
-
-// // Standard Transaction Handler (Savings, Share Capital, etc.)
-// if (isset($_POST['post_new_transaction'])) {
-//     require('db_connect.php');
-
-
-//     $type_id = (int)$_POST['transaction_type_id'];
-
-//     // If it's a LOAN PAYMENT (Assuming ID 5 based on your logic), 
-//     // we redirect the data to your existing 'save-loan-payments' logic
-//     if ($type_id == 5) {
-//         $_POST['save-loan-payments'] = 1;
-//         $_POST['amount_paid'] = $_POST['amount']; // Match variable names
-//         // The script continues to the loan payment block below
-//     } else {
-//         // Handle normal Deposit/Withdrawal
-//         $account_id = (int)$_POST['account_id'];
-//         $amount = floatval($_POST['amount']);
-//         $ref = $db->real_escape_string($_POST['reference_no']);
-//         $remarks = $db->real_escape_string($_POST['remarks']);
-//         $date = $_POST['transaction_date'];
-
-//         $db->begin_transaction();
-//         try {
-//             $stmt = $db->prepare("INSERT INTO transactions (account_id, transaction_type_id, amount, reference_no, remarks, transaction_date, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-//             $stmt->bind_param("iidsss", $account_id, $type_id, $amount, $ref, $remarks, $date);
-//             $stmt->execute();
-
-//             $db->commit();
-//             echo json_encode(["success" => true]);
-//         } catch (Exception $e) {
-//             $db->rollback();
-//             echo json_encode(["success" => false, "message" => $e->getMessage()]);
-//         }
-//         exit;
-//     }
-// }
 
 
 if (isset($_POST['save-loan-payments'])) {
@@ -3798,7 +3745,7 @@ if (isset($_POST['save-loan-payments'])) {
             (account_id, transaction_type_id, amount, reference_no, remarks, transaction_date, created_at)
             VALUES (?,?,?,?,?,?,NOW())
         ");
-        $type    = 5; // loan payment
+        $type    = 5;
         $remarks = "Loan payment ref $reference";
         $stmt3->bind_param("iidsss", $account_id, $type, $amount_paid, $reference, $remarks, $payment_date);
         $stmt3->execute();

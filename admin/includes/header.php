@@ -38,7 +38,7 @@ if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
 	<link rel="manifest" href="/manifest.json">
-	<meta name="theme-color" content="#004aad">
+	<meta name="theme-color" content="#0052a4">
 	<link rel="apple-touch-icon" href="/assets/icons/your_logo.png">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<title>OCC Cooperative</title>
@@ -74,7 +74,7 @@ if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {
 	body::-webkit-scrollbar-thumb {
 
 		-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
-		background-color: #26a69a;
+		background-color: #0052a4;;
 		height: 20px;
 	}
 
@@ -107,7 +107,7 @@ if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {
 	}
 
 	.modal-body::-webkit-scrollbar-thumb {
-		background-color: #26a69a;
+		background-color: #0052a4;
 	}
 
 	.modal-footer {

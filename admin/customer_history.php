@@ -285,7 +285,7 @@ $payments = $db->query("
 
 <body class="layout-boxed navbar-top">
     <!-- Main navbar -->
-    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
+   <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
         <div class="navbar-header">
             <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">
@@ -590,7 +590,10 @@ $payments = $db->query("
                                             <div class="panel panel-white border-top-xlg border-top-teal-400">
                                                 <div class="panel-heading">
                                                     <h6 class="panel-title">
-                                                        <i class="icon-wallet position-left text-teal-400"></i> Savings (<?= $year; ?>)
+                                                        <i class="icon-wallet position-left text-teal-400"></i> Savings
+                                                        <small style="margin-left:10px; color:#777;">
+                                                            (<?= date('M d, Y', strtotime($date_from)) ?> to <?= date('M d, Y', strtotime($date_to)) ?>)
+                                                        </small>
                                                     </h6>
                                                 </div>
                                                 <div class="panel-body">
@@ -627,7 +630,7 @@ $payments = $db->query("
                             ON tt.transaction_type_id = t.transaction_type_id
                         WHERE a.member_id = $member_id
                           AND at.type_name = 'savings'
-                          AND YEAR(t.transaction_date) = $year
+                          AND DATE(t.transaction_date) BETWEEN '$date_from' AND '$date_to'
                         ORDER BY t.created_at ASC, t.transaction_id ASC
                     ");
 
@@ -669,7 +672,7 @@ $payments = $db->query("
                                                             } else {
                                                                 echo "
                         <tr>
-                            <td colspan='5' class='text-center'>No savings found for {$year}.</td>
+                            <td colspan='5' class='text-center'>No savings found for this period.</td>
                         </tr>
                         ";
                                                             }
@@ -684,7 +687,10 @@ $payments = $db->query("
                                             <div class="panel panel-white border-top-xlg border-top-teal-400">
                                                 <div class="panel-heading">
                                                     <h6 class="panel-title">
-                                                        <i class="icon-coins position-left text-teal-400"></i> Loan History (<?= $year; ?>)
+                                                        <i class="icon-coins position-left text-teal-400"></i> Loan History
+                                                        <small style="margin-left:10px; color:#777;">
+                                                            (<?= date('M d, Y', strtotime($date_from)) ?> to <?= date('M d, Y', strtotime($date_to)) ?>)
+                                                        </small>
                                                     </h6>
                                                 </div>
                                                 <div class="panel-body">
@@ -705,13 +711,18 @@ $payments = $db->query("
                                                         <tbody>
                                                             <?php
 
-                                                            // Fetch loans INCLUDING total_due
+                                                            // Fetch loans INCLUDING total_due with date filtering
                                                             $loan_result = $db->query("
 SELECT l.loan_id, l.total_due, l.status, lt.loan_type_name
 FROM loans l
 JOIN loan_types lt ON l.loan_type_id = lt.loan_type_id
 JOIN accounts a ON l.account_id = a.account_id
 WHERE a.member_id = $member_id
+AND EXISTS (
+    SELECT 1 FROM loan_payments lp 
+    WHERE lp.loan_id = l.loan_id 
+    AND DATE(lp.payment_date) BETWEEN '$date_from' AND '$date_to'
+)
 ORDER BY l.loan_id DESC
 ");
 
@@ -727,12 +738,13 @@ ORDER BY l.loan_id DESC
                                                                     $balance = floatval($loan['total_due']);
 
 
-                                                                    // Fetch payments
+                                                                    // Fetch payments with date filtering
                                                                     $payments = $db->query("
         SELECT *
         FROM loan_payments
         WHERE loan_id = $loan_id
-        ORDER BY payment_date ASC, payment_id ASC
+        AND DATE(payment_date) BETWEEN '$date_from' AND '$date_to'
+        ORDER BY created_at ASC, payment_id ASC
         ");
 
 
@@ -875,7 +887,7 @@ No loans found
 
                                                             <?php if (!$hasCash) { ?>
                                                                 <tr>
-                                                                    <td colspan="3">No cash sales found for <?= $year; ?>.</td>
+                                                                    <td colspan="3">No cash sales found for this period.</td>
                                                                 </tr>
                                                             <?php } ?>
                                                         </tbody>
@@ -961,7 +973,7 @@ No loans found
                                                             }
 
                                                             if (!$hasCharge) {
-                                                                echo "<tr><td colspan='5'>No charge sales found for $year.</td></tr>";
+                                                                echo "<tr><td colspan='5'>No charge sales found for this period.</td></tr>";
                                                             }
                                                             ?>
 

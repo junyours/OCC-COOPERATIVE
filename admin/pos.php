@@ -271,6 +271,7 @@ while ($row = $result_beginning->fetch_assoc()) {
                 <?php } ?>
             </div>
         </div>
+        
         <div class="main-content">
             <div class="main-right">
                 <div class="cart-content">

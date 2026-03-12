@@ -87,36 +87,26 @@ function getPurchasesData($db, $start_date, $end_date) {
 
 
 function getCapitalSharesData($db, $start_date, $end_date) {
+    // Use the same approach as reference code - simple direct query with type_name
     $query = "SELECT SUM(t.amount) as total_capital, COUNT(*) as total_shares, COUNT(DISTINCT a.member_id) as total_members
             FROM transactions t
             JOIN accounts a ON t.account_id = a.account_id
             JOIN account_types at ON a.account_type_id = at.account_type_id
-            WHERE at.account_type_id = 2 -- capital_share account_type_id
-            AND t.status = 'active'
-            AND EXISTS (
-                SELECT 1 FROM transaction_types tt 
-                WHERE tt.transaction_type_id = t.transaction_type_id 
-                AND tt.type_name = 'deposit'
-            )
-            AND DATE(t.created_at) BETWEEN '$start_date' AND '$end_date'";
+            WHERE at.type_name = 'capital_share'
+            AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'";
     
     $result = $db->query($query);
     return $result->fetch_assoc();
 }
 
 function getTotalCapitalData($db, $start_date, $end_date) {
+    // Use the same approach as reference code - all time capital shares
     $query = "SELECT SUM(t.amount) as total_capital_all, COUNT(DISTINCT a.member_id) as total_members_all
             FROM transactions t
             JOIN accounts a ON t.account_id = a.account_id
             JOIN account_types at ON a.account_type_id = at.account_type_id
-            WHERE at.account_type_id = 2 -- capital_share account_type_id
-            AND t.status = 'active'
-            AND EXISTS (
-                SELECT 1 FROM transaction_types tt 
-                WHERE tt.transaction_type_id = t.transaction_type_id 
-                AND tt.type_name = 'deposit'
-            )
-            AND DATE(t.created_at) BETWEEN '$start_date' AND '$end_date'";
+            WHERE at.type_name = 'capital_share'
+            AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'";
     
     $result = $db->query($query);
     return $result->fetch_assoc();
@@ -186,8 +176,8 @@ function getLoanRepaymentsData($db, $start_date, $end_date) {
 
 
 function getSavingsData($db, $start_date, $end_date) {
-    
-    $query = "SELECT 
+    // Calculate deposits (positive transactions)
+    $deposit_query = "SELECT 
         SUM(t.amount) as total_deposits,
         COUNT(*) as deposit_count,
         COUNT(DISTINCT a.member_id) as savers_count
@@ -195,49 +185,80 @@ function getSavingsData($db, $start_date, $end_date) {
         JOIN accounts a ON t.account_id = a.account_id
         JOIN account_types at ON a.account_type_id = at.account_type_id
         WHERE at.type_name = 'savings'
-        AND t.status = 'active'
+        AND t.amount > 0
         AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'";
     
-    $result = $db->query($query);
-    $data = $result->fetch_assoc();
+    $deposit_result = $db->query($deposit_query);
+    $deposit_data = $deposit_result->fetch_assoc();
     
+    // Calculate withdrawals (negative transactions)
+    $withdrawal_query = "SELECT 
+        SUM(ABS(t.amount)) as total_withdrawals,
+        COUNT(*) as withdrawal_count
+        FROM transactions t
+        JOIN accounts a ON t.account_id = a.account_id
+        JOIN account_types at ON a.account_type_id = at.account_type_id
+        WHERE at.type_name = 'savings'
+        AND t.amount < 0
+        AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'";
     
-    $data['total_withdrawals'] = 0;
-    $data['withdrawal_count'] = 0;
+    $withdrawal_result = $db->query($withdrawal_query);
+    $withdrawal_data = $withdrawal_result->fetch_assoc();
+    
+    // Combine the data
+    $data = [
+        'total_deposits' => $deposit_data['total_deposits'] ?? 0,
+        'deposit_count' => $deposit_data['deposit_count'] ?? 0,
+        'savers_count' => $deposit_data['savers_count'] ?? 0,
+        'total_withdrawals' => $withdrawal_data['total_withdrawals'] ?? 0,
+        'withdrawal_count' => $withdrawal_data['withdrawal_count'] ?? 0
+    ];
     
     return $data;
 }
 
 function getSavingsBalanceData($db, $start_date, $end_date) {
-   
+    // Calculate net balance (deposits minus withdrawals) for the period
     $query = "SELECT 
+        SUM(CASE WHEN t.amount > 0 THEN t.amount ELSE 0 END) as total_deposits,
+        SUM(CASE WHEN t.amount < 0 THEN ABS(t.amount) ELSE 0 END) as total_withdrawals,
         SUM(t.amount) as current_balance,
         COUNT(DISTINCT a.member_id) as active_savers
         FROM transactions t 
         JOIN accounts a ON t.account_id = a.account_id
         JOIN account_types at ON a.account_type_id = at.account_type_id
         WHERE at.type_name = 'savings'
-        AND t.status = 'active'
         AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'";    
     
     $result = $db->query($query);
-    return $result->fetch_assoc();
+    $data = $result->fetch_assoc();
+    
+    // Ensure we have the correct net balance
+    $data['current_balance'] = ($data['total_deposits'] ?? 0) - ($data['total_withdrawals'] ?? 0);
+    
+    return $data;
 }
 
 function getCumulativeSavingsBalance($db, $start_date, $end_date) {
-  
+    // Calculate net balance (deposits minus withdrawals) for all time
     $query = "SELECT 
+        SUM(CASE WHEN t.amount > 0 THEN t.amount ELSE 0 END) as total_deposits,
+        SUM(CASE WHEN t.amount < 0 THEN ABS(t.amount) ELSE 0 END) as total_withdrawals,
         SUM(t.amount) as current_balance,
         COUNT(DISTINCT a.member_id) as active_savers
         FROM transactions t
         JOIN accounts a ON t.account_id = a.account_id
         JOIN account_types at ON a.account_type_id = at.account_type_id
         WHERE at.type_name = 'savings'
-        AND t.status = 'active'
-         AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'"; 
+        AND DATE(t.transaction_date) BETWEEN '$start_date' AND '$end_date'";
     
     $result = $db->query($query);
-    return $result->fetch_assoc();
+    $data = $result->fetch_assoc();
+    
+    // Ensure we have the correct net balance
+    $data['current_balance'] = ($data['total_deposits'] ?? 0) - ($data['total_withdrawals'] ?? 0);
+    
+    return $data;
 }
 
 
@@ -586,7 +607,7 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 
 <body class="layout-boxed navbar-top">
 
-    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
+   <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
         <div class="navbar-header">
             <a class="navbar-brand" href="index.php">
                 <img src="../images/main_logo.jpg" alt="Logo">
@@ -673,7 +694,7 @@ $customer_analysis_result = $db->query($customer_analysis_query);
         </div>
     </div>
 </div>
-
+     
 <!-- Cooperative-Specific Metrics -->
 <div class="row">
     <div class="col-lg-3 col-md-6">

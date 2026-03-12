@@ -156,7 +156,7 @@
 
         <body class="layout-boxed navbar-top">
             <!-- NAVBAR -->
-            <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
+            <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
                 <div class="navbar-header">
                     <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
                     <ul class="nav navbar-nav visible-xs-block">
@@ -828,7 +828,7 @@
             <script src="../js/html2canvas.min.js"></script>
             <script src="../js/jspdf.umd.min.js"></script>
 
-            <script src="../assets/js/plugins/tables/datatables/datatables.min.js"></script>
+            <!-- <script src="../assets/js/plugins/tables/datatables/datatables.min.js"></script> -->
 
             <script>
                 document.getElementById('btn-download-pdf').addEventListener('click', async function() {

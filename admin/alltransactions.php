@@ -124,7 +124,7 @@ if (
 
 <body class="layout-boxed navbar-top">
 
-    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
+   <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
         <div class="navbar-header">
             <a class="navbar-brand" href="index.php">
                 <img src="../images/main_logo.jpg" alt="Logo">

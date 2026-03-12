@@ -176,7 +176,7 @@ function exportProducts($db) {
         ], null, 'A' . $row);
         $row++;
     }
-    
+                
     // Auto-size columns
     foreach (range('A', 'L') as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -411,7 +411,7 @@ function exportCapitalShare($db) {
     $sheet->getStyle('A1:H1')->getFont()->setBold(true);
     $sheet->getStyle('A1:H1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE0E0E0');
     
-    // Get actual data from database - capital share transactions
+
     $query = "SELECT t.transaction_id, t.account_id, a.account_number, 
               CONCAT(m.first_name, ' ', m.last_name) as member_name, 
               t.amount, t.reference_no, t.transaction_date, t.remarks

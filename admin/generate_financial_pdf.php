@@ -410,7 +410,7 @@ if ($cooperative_tables_exist) {
 // Get additional data for PDF
 $top_products_query = "SELECT p.product_name, SUM(s.quantity_order) as total_quantity, SUM(s.total_amount) as total_revenue
                        FROM tbl_sales s
-                       JOIN tbl_products p ON s.product_id = p.product_id
+                       JOIN tbl_products p ON s.product_id = p.product_id   
                        WHERE DATE(s.sales_date) BETWEEN '$start_date' AND '$end_date' AND s.field_status = 0
                        GROUP BY p.product_id, p.product_name
                        ORDER BY total_revenue DESC

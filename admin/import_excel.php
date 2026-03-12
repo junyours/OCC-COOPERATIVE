@@ -102,7 +102,7 @@ function getTableMapping($import_type) {
         'members' => [
             'table' => 'tbl_members',
             'columns' => [
-                'A' => 'first_name',
+                'A' => 'firt_name',
                 'B' => 'last_name',
                 'C' => 'middle_name',
                 'D' => 'gender',
@@ -508,7 +508,7 @@ function insertData($db, $table, $data, $data_types) {
 </div>
 
 <script>
-// File upload functionality
+
 const fileDropZone = document.getElementById('fileDropZone');
 const fileInput = document.getElementById('excel_file');
 

@@ -420,7 +420,7 @@ function view_cart($data)
         echo "
         <tr order_no='d$i'>
             <td order_no='d$i' style='width:50px;text-align:center;padding:0px;'>$i</td>
-            <td style='background:#26a69a;color:#fff;font-weight:bold;border-bottom:1px dotted #ddd;width:63%;'>
+            <td style='background:#0279f1;color:#fff;font-weight:bold;border-bottom:1px dotted #ddd;width:63%;'>
                 <i title='Delete' onclick='delete_cart(this)' cart_id='" . $row['cart_id'] . "' style='cursor:pointer;color:red' class='icon-trash'></i>&nbsp;&nbsp;
                 <img alt='$image_file' style='width:30px;height:30px;border:2px solid #eee;background:#fff' src='$image_file' />
                 <span>$product_name</span>
@@ -561,7 +561,7 @@ function view_cart2($data)
         echo "
         <tr order_no='d$i'>
             <td order_no='d$i' style='width:50px;text-align:center;'>$i</td>
-            <td style='width:260px;background:#26a69a;color:#fff;font-weight:bold;border-bottom:1px dotted #ddd'>
+            <td style='width:260px;background:#0279f1;color:#fff;font-weight:bold;border-bottom:1px dotted #ddd'>
                 <i title='Delete' onclick='delete_cart(this)' cart_id='" . $row['cart_id'] . "' style='cursor:pointer;color:#c00505 !important' class='icon-trash'></i>&nbsp;&nbsp;
                 " . $row['product_name'] . "
             </td>
@@ -581,7 +581,7 @@ function view_cart2($data)
     }
 
     if ($i == 0) {
-        echo '<div style="width:100%;text-align:center;padding-top:250px;padding-bottom:112px;font-size:30px;font-weight:bold;color:#26a69a">No Product Added [RECEIVING]</div>';
+        echo '<div style="width:100%;text-align:center;padding-top:250px;padding-bottom:112px;font-size:30px;font-weight:bold;color:#0052a4">No Product Added [RECEIVING]</div>';
     }
 }
 

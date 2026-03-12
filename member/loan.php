@@ -132,7 +132,7 @@ $stmt->close();
 <body class="layout-boxed navbar-top">
 
     <!-- NAVBAR -->
-    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
+    <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
         <div class="navbar-header">
             <a class="navbar-brand" href="dashboard.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
             <ul class="nav navbar-nav visible-xs-block">

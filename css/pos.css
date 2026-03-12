@@ -27,7 +27,7 @@ body{
 
 .modal-body::-webkit-scrollbar-thumb
 {
-	background-color: #1d9489;
+	background-color:#0052a4;
 }
 
 .modal-bodys{
@@ -54,10 +54,10 @@ body{
 	padding-top: 5px;
 }
 .top-row2{
-	background: #26a69a;
+	background: #0899af;
 }
 .top-row3{
-	background:  #35756f;
+	background:  #0052a4;
 	padding-left: 15px;
 	padding-top: 5px;
 }
@@ -82,7 +82,7 @@ body{
 }
 .input-text i{
     font-size: 25px;
-    color: #26a69a;
+    color: #0052a4;
     padding-top: 15px;
 }
 .cart-row{
@@ -118,7 +118,7 @@ body{
 
 #cart-divs::-webkit-scrollbar-thumb
 {
-	background-color:#26a69a;
+	background-color:#0052a4;
 }
 
 .cart-row2{
@@ -154,8 +154,8 @@ body{
 	padding-left: 10px
 }
 .amount-due-div{
-	border-top:1px dotted#26a69a;
-	border-bottom:1px dotted #26a69a;
+	border-top:1px dotted#0052a4;
+	border-bottom:1px dotted #0052a4;
 	background:#484646; 
 	min-height: 90px;
 	font-weight: bold;
@@ -289,7 +289,7 @@ body{
 
 #show-search::-webkit-scrollbar-thumb
 {
-	background-color:#1d9489;
+	background-color:#0052a4;
 }
 #show-search-customer{
     position: absolute;
@@ -315,7 +315,7 @@ body{
 
 #show-search-customer::-webkit-scrollbar-thumb
 {
-	background-color:#1d9489;
+	background-color:#0052a4;
 }
 .ul-search{
     list-style-type: none;
@@ -426,7 +426,7 @@ body{
 } 
 
 .customer-div2{
-   background-color:#008fa1;
+   background-color:#0052a4;
    cursor: pointer;
 } 
 
@@ -494,7 +494,7 @@ body{
 	padding-bottom:112px;
 	font-size:30px;
 	font-weight:bold;
-	color:#26a69a
+	color:#0052a4
 }
 input[type='number'] {
     -moz-appearance:textfield;
@@ -515,7 +515,7 @@ input::-webkit-inner-spin-button {
 	height: 90px;
     display: flex;
 	align-items: center;
-	background: #26a69a;
+	background: #0579ee;
 }
 
 .top-content .logo {
@@ -550,7 +550,7 @@ input::-webkit-inner-spin-button {
 
 .top-content .left-action {
 	padding: 4px;
-	background: #35756f;
+	background: #0279f1;
 	height: 100%;
 
 }
@@ -626,7 +626,7 @@ input::-webkit-inner-spin-button {
 	right: 5px;
 	top: 1px;
 	font-size: 14px;
-	color: #0bffe8;
+	color: #0052a4;
 }
 
 .summary-action{

@@ -1,0 +1,425 @@
+/*--
+Professional Cooperative Login Page Styles
+Blue Theme Design for OCC Cooperative
+Author: Enhanced Design
+--*/
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 25%, #b9d8e8 50%, #a1c9e0 75%, #89bad8 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Professional Dark White-Blue Background */
+.bg-gradient {
+    background: linear-gradient(135deg, #f0f7fa 0%, #e1eff5 20%, #d1e7f0 40%, #c1dfeb 60%, #b1d7e6 80%, #a1c9e0 100%);
+    background-size: 400% 400%;
+    animation: gentleShift 25s ease infinite;
+}
+
+@keyframes gentleShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Login Card Styles */
+.login-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    border: 2px solid rgba(0, 82, 155, 0.1);
+    box-shadow: 0 15px 35px rgba(0, 82, 155, 0.08);
+    transition: all 0.3s ease;
+    max-width: 450px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.login-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(0, 82, 155, 0.12);
+    border-color: rgba(0, 82, 155, 0.2);
+}
+
+/* Logo Styles */
+.logo-img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #0052a4;
+    box-shadow: 0 6px 20px rgba(0, 82, 155, 0.15);
+    transition: all 0.3s ease;
+}
+
+.logo-img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 82, 155, 0.25);
+}
+
+/* Form Styles */
+.form-label {
+    font-weight: 600;
+    color: #0052a4;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+}
+
+.input-group {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 82, 155, 0.05);
+}
+
+.input-group:focus-within {
+    box-shadow: 0 0 0 3px rgba(0, 82, 155, 0.1);
+    transform: translateY(-1px);
+}
+
+.input-group-text {
+    background: linear-gradient(135deg, #0052a4 0%, #1976d2 100%);
+    border: none;
+    color: white;
+    font-weight: 500;
+    padding: 12px 15px;
+}
+
+.form-control {
+    border: 2px solid #e3f2fd;
+    border-left: none;
+    padding: 12px 15px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: #fafbfc;
+    color: #333;
+}
+
+.form-control:focus {
+    border-color: #0052a4;
+    box-shadow: none;
+    background: white;
+    color: #333;
+}
+
+.form-control::placeholder {
+    color: #90a4ae;
+    font-style: normal;
+}
+
+/* Input Focus Effects */
+.input-focus {
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(0, 82, 155, 0.15);
+}
+
+/* Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, #0052a4 0%, #1976d2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0, 82, 155, 0.2);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #004494 0%, #1565c0 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 82, 155, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-outline-secondary {
+    border: 2px solid #e3f2fd;
+    background: white;
+    color: #64b5f6;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background: #e3f2fd;
+    border-color: #90caf9;
+    color: #0052a4;
+}
+
+/* Checkbox Styles */
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #90caf9;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+
+.form-check-input:checked {
+    background: linear-gradient(135deg, #0052a4 0%, #1976d2 100%);
+    border-color: #0052a4;
+}
+
+.form-check-input:focus {
+    border-color: #0052a4;
+    box-shadow: 0 0 0 0.2rem rgba(0, 82, 155, 0.25);
+}
+
+.form-check-label {
+    font-size: 0.9rem;
+    color: #546e7a;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 500;
+}
+
+/* Alert Styles */
+.isa_error {
+    border-radius: 8px;
+    border-left: 4px solid #f44336;
+    background: linear-gradient(to right, rgba(244, 67, 54, 0.08), rgba(244, 67, 54, 0.03));
+    animation: slideInRight 0.3s ease;
+    color: #c62828;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Loading Overlay */
+.loader-overlay {
+    backdrop-filter: blur(3px);
+}
+
+.spinner {
+    border-width: 4px;
+    border-color: rgba(0, 82, 155, 0.2);
+    border-top-color: #0052a4;
+}
+
+/* Feature Icons */
+.display-1 {
+    font-size: 4rem;
+    color: #0052a4;
+    text-shadow: 0 2px 10px rgba(0, 82, 155, 0.1);
+    animation: gentleFloat 4s ease-in-out infinite;
+}
+
+@keyframes gentleFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.fa-2x {
+    font-size: 2rem;
+    color: #1976d2;
+    transition: all 0.3s ease;
+}
+
+.fa-2x:hover {
+    color: #0052a4;
+    transform: scale(1.1);
+}
+
+/* Typography */
+h1 {
+    font-weight: 700;
+    color: #0052a4;
+    text-shadow: 0 2px 8px rgba(0, 82, 155, 0.1);
+    margin-bottom: 1rem;
+}
+
+h2 {
+    font-weight: 600;
+    color: #0052a4;
+}
+
+.lead {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: #546e7a;
+    opacity: 0.9;
+}
+
+.text-primary {
+    color: #0052a4 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+    .login-card {
+        margin: 20px auto;
+        max-width: 400px;
+    }
+    
+    .container-fluid {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .login-card {
+        margin: 15px auto;
+        max-width: 380px;
+    }
+    
+    .card-body {
+        padding: 30px 25px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-card {
+        margin: 10px auto;
+        border-radius: 12px;
+        max-width: 350px;
+    }
+    
+    .card-body {
+        padding: 25px 20px !important;
+    }
+    
+    .logo-img {
+        width: 70px;
+        height: 70px;
+    }
+    
+    h2 {
+        font-size: 1.4rem;
+    }
+    
+    .btn-primary {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Professional Elements */
+.shadow-lg {
+    box-shadow: 0 15px 35px rgba(0, 82, 155, 0.08) !important;
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hover Effects */
+.hover-lift {
+    transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #0052a4 0%, #1976d2 100%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #004494 0%, #1565c0 100%);
+}
+
+/* Accessibility */
+.btn:focus,
+.form-control:focus,
+.form-check-input:focus {
+    outline: 2px solid #0052a4;
+    outline-offset: 2px;
+}
+
+/* Professional Blue Theme Elements */
+.text-muted {
+    color: #546e7a !important;
+}
+
+.small {
+    color: #607d8b;
+    font-weight: 500;
+}
+
+/* Print Styles */
+@media print {
+    .login-card {
+        box-shadow: none;
+        border: 1px solid #0052a4;
+    }
+    
+    .bg-gradient {
+        background: white;
+    }
+}
+
+/* Cooperative Brand Elements */
+.cooperative-blue {
+    color: #0052a4;
+}
+
+.cooperative-light-blue {
+    color: #64b5f6;
+}
+
+.cooperative-bg-light {
+    background-color: #e3f2fd;
+}
+
+.cooperative-border {
+    border-color: #0052a4;
+}

@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['loan_type_id'])) {
 </style>
 
 <body class="layout-boxed navbar-top">
-    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
+   <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
         <div class="navbar-header">
             <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
         </div>
