@@ -19,9 +19,7 @@ if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {
 	exit();
 }
 
-// Optional: store session_type for convenience
-// $check_session = $_SESSION['is_login_yes'];
-// $session_type = $_SESSION['session_type'] ?? '';
+
 
 
 ?>

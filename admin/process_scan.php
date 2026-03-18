@@ -1,5 +1,5 @@
 <?php
-require 'db_connect.php'; // Your SQLite3 DB connection
+require '../db_connect.php'; 
 
 if (!isset($_GET['code'])) {
     echo "No barcode scanned!";

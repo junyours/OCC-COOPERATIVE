@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 session_start();
 
 if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {

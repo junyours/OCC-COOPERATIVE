@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 
 if (isset($_POST['query']) && !empty($_POST['query'])) {
     $query = $db->real_escape_string($_POST['query']);

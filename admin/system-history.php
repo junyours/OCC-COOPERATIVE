@@ -117,7 +117,7 @@ if (
 	die("Unauthorized access.");
 }
 
-require('db_connect.php');
+require('../db_connect.php');
 $query = "SELECT * FROM tbl_customer";
 $customer = $db->query($query);
 $query1 = "SELECT * FROM tbl_users";

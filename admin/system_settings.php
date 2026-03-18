@@ -1,5 +1,5 @@
 <?php require('includes/header.php'); ?>
-<?php require('db_connect.php'); ?>
+<?php require('../db_connect.php'); ?>
 
 <?php
 

@@ -935,7 +935,6 @@ if (isset($_POST['save_cartbarcode'])) {
 
     $barcode = $db->real_escape_string($barcode);
 
-    // Fetch product
     $stmt = $db->prepare("SELECT product_id, quantity FROM tbl_products WHERE product_code = ?");
     $stmt->bind_param("s", $barcode);
     $stmt->execute();
@@ -947,8 +946,6 @@ if (isset($_POST['save_cartbarcode'])) {
         $row = $result->fetch_assoc();
         $product_id = $row['product_id'];
         $product_stock = (int)$row['quantity'];
-
-        // Check current cart
         $stmt_cart = $db->prepare("SELECT quantity_order FROM tbl_cart WHERE product_id = ? AND user_id = ?");
         $stmt_cart->bind_param("ii", $product_id, $user_id);
         $stmt_cart->execute();
@@ -969,7 +966,7 @@ if (isset($_POST['save_cartbarcode'])) {
                 'quantity_left' => $product_stock
             ]);
         } else {
-            // Save or update cart
+    
             save_cart([
                 'type' => 'add',
                 'product_id' => $product_id,
@@ -980,7 +977,7 @@ if (isset($_POST['save_cartbarcode'])) {
             echo json_encode(['message' => 'save']);
         }
     } else {
-        // Product not found
+
         echo json_encode(['message' => 'not_found']);
     }
 
@@ -997,7 +994,7 @@ if (isset($_POST['save_cart2barcode'])) {
 
     if (!isset($_SESSION['user_id'])) {
         echo json_encode(['message' => 'unauthenticated']);
-        exit; // ✅ STOP SCRIPT
+        exit; 
     }
 
     $user_id = $_SESSION['user_id'];

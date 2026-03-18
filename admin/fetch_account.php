@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 
 // Make sure $member_id and $year are set
 $member_id = $_SESSION['member_id'] ?? 0;

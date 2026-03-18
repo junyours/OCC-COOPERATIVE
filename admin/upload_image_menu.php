@@ -1,6 +1,6 @@
 <?php
     session_start();
-    require('db_connect.php');  
+    require('../db_connect.php');  
         $menu_id = $_POST['menu_id']; 
         $result_returns = "SELECT * FROM  tbl_menu  WHERE menu_id='$menu_id'  ";
         $result_data = $db->query($result_returns);

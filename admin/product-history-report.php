@@ -108,7 +108,7 @@
 </style>
 <?php
 
-require('db_connect.php');
+require('../db_connect.php');
 if (isset($_SESSION['inventory-report-product']) != "") {
 	$user_query_name = "SELECT * FROM tbl_products WHERE product_id='" . $_SESSION['inventory-report-product'] . "' ";
 	$user_queryname = $db->query($user_query_name);

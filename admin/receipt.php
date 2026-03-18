@@ -1,7 +1,7 @@
 <?php
 error_reporting(0);
 
-require('db_connect.php');
+require('../db_connect.php');
 if (isset($_GET['sales_no'])) {
     $sales_no = $_GET['sales_no'];
 }

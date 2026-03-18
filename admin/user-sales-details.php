@@ -1,6 +1,6 @@
 
 <?php
-  require('db_connect.php');
+  require('../db_connect.php');
 ?>
 <div class="panel panel-white">
    <div class="panel-heading">

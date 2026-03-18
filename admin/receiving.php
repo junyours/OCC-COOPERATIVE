@@ -1,7 +1,7 @@
 <?php
 session_start();
 ini_set('max_execution_time', 0);
-require('db_connect.php');
+require('../db_connect.php');
 
 $type = isset($_GET['type']) ? 1 : 0;
 $check_session  = $_SESSION['is_login_yes'] ?? 0;

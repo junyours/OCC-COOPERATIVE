@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 $query = "SELECT * FROM tbl_receivings  INNER JOIN tbl_products ON tbl_receivings.product_id=tbl_products.product_id INNER JOIN tbl_users ON tbl_receivings.user_id=tbl_users.user_id  LEFT JOIN tbl_supplier  ON tbl_receivings.supplier_id=tbl_supplier.supplier_id WHERE tbl_receivings.receiving_no='" . $receiving_no . "'  ";
 $total = 0;
 $result = $db->query($query);

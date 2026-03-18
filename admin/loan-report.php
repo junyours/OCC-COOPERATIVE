@@ -1,6 +1,6 @@
 <?php
 require('includes/header.php');
-require('db_connect.php');
+require('../db_connect.php');
 ?>
 
 <style type="text/css">

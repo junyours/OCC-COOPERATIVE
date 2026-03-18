@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 $mid = intval($_GET['member_id'] ?? 0);
 
 $data = ['schedules' => [], 'loans' => []];

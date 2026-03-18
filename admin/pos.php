@@ -17,7 +17,7 @@ if (
 
 
 ini_set('max_execution_time', 0);
-require('db_connect.php');
+require('../db_connect.php');
 $type = 1;
 if (isset($_GET['type'])) {
     $type = 0;

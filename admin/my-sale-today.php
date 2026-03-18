@@ -1,6 +1,6 @@
 <?php session_start(); ?>
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 
 ?>
 <table class="table  datatable-button-html5-basic table-hover table-bordered">
