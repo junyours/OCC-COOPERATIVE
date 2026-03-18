@@ -175,7 +175,7 @@
 
 <?php
 
-require('db_connect.php');
+require('../db_connect.php');
 if (isset($_SESSION['expences-report-user']) != "") {
 	$user_query_name = "SELECT * FROM tbl_users WHERE user_id='" . $_SESSION['expences-report-user'] . "' ";
 	$user_queryname = $db->query($user_query_name);

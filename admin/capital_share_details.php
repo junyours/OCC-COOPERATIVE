@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 
 if (!isset($_GET['reference_no'])) {
     die("Reference number not provided.");

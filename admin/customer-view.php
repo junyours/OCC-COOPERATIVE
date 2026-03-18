@@ -1,6 +1,6 @@
 <?php session_start(); ?>
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 $query = "SELECT * FROM tbl_customer";
 $result = $db->query($query);
 ?>

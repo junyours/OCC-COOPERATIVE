@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 
 // Set headers for CSV download
 header('Content-Type: text/csv');

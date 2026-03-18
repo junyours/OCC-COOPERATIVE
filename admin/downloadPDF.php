@@ -1,6 +1,6 @@
 <?php
 session_start();
-require('db_connect.php');
+require('../db_connect.php');
 ?>
 <link href="../assets/css/bootstrap.css" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="../assets/js/core/libraries/jquery.min.js"></script>

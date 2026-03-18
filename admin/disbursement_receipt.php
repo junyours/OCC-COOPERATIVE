@@ -1,5 +1,5 @@
 <?php
-require('db_connect.php');
+require('../db_connect.php');
 
 if (!isset($_GET['loan_id'])) {
     die("Invalid request: Missing loan ID.");
