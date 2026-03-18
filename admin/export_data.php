@@ -1,4 +1,3 @@
-<?php require('includes/header.php'); ?>
 <?php
 require_once '../db_connect.php';
 
@@ -78,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['export_type'])) {
 
 function downloadFile($filepath, $filename) {
     if (file_exists($filepath)) {
-        // Determine content type based on file extension
+        
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         
@@ -94,7 +93,7 @@ function downloadFile($filepath, $filename) {
         header('Pragma: public');
         header('Content-Length: ' . filesize($filepath));
         readfile($filepath);
-        unlink($filepath); // Delete temporary file
+        unlink($filepath); 
         exit;
     } else {
         throw new Exception("File not found: $filepath");
@@ -128,7 +127,7 @@ function exportAllData($db) {
         }
         $zip->close();
         
-        // Delete individual files after adding to zip
+        
         foreach ($files as $file) {
             if (file_exists($file)) {
                 unlink($file);
@@ -193,7 +192,7 @@ function exportMembers($db) {
     $sheet = $spreadsheet->getActiveSheet();
     
     // Headers
-    $headers = ['First Name', 'Last Name', 'Middle Name', 'Gender', 'Birthdate', 'Phone', 'Email', 'Address', 'Type', 'Membership Date'];
+    $headers = ['Member ID','First Name', 'Last Name', 'Middle Name', 'Gender', 'Phone',  'Address','Status', 'Type', 'Membership Date'];
     $sheet->fromArray($headers, null, 'A1');
     
     // Style headers
@@ -201,21 +200,21 @@ function exportMembers($db) {
     $sheet->getStyle('A1:J1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE0E0E0');
     
     // Get actual data from database
-    $query = "SELECT first_name, last_name, middle_name, gender, birthdate, phone, email, address, type, membership_date 
+    $query = "SELECT member_id, first_name, last_name, middle_name, gender, phone, address, status, type, membership_date 
               FROM tbl_members ORDER BY member_id";
     $result = $db->query($query);
     
     $row = 2;
     while ($data = $result->fetch_assoc()) {
         $sheet->fromArray([
+            $data['member_id'],
             $data['first_name'],
             $data['last_name'],
             $data['middle_name'],
             $data['gender'],
-            $data['birthdate'],
             $data['phone'],
-            $data['email'],
             $data['address'],
+            $data['status'],
             $data['type'],
             $data['membership_date']
         ], null, 'A' . $row);
@@ -660,13 +659,37 @@ function exportReceivings($db) {
 }
 ?>
 
+<?php require('includes/header.php'); ?>
+
 <style>
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    font-weight: 800;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+    margin-right: 12px;
+    border-radius: 20px;
+}
+
+.navbar-brand span {
+    white-space: nowrap;
+}
+
 .export-container {
     background: white;
     padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin: 20px 0;
+    border: 1px solid #ddd;
 }
 
 .export-form {
@@ -687,25 +710,38 @@ function exportReceivings($db) {
 
 .form-control {
     width: 100%;
-    padding: 10px;
+    padding: 8px 12px;
     border: 1px solid #ddd;
-    border-radius: 5px;
+    border-radius: 3px;
     font-size: 14px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #26a69a;
+    box-shadow: 0 0 0 0.2rem rgba(38, 166, 154, 0.25);
 }
 
 .btn {
-    padding: 10px 20px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 5px;
+    border-radius: 3px;
     cursor: pointer;
     font-size: 14px;
     text-decoration: none;
     display: inline-block;
     margin: 5px;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
 }
 
 .btn-primary {
     background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
     color: white;
 }
 
@@ -714,27 +750,51 @@ function exportReceivings($db) {
     color: white;
 }
 
+.btn-success:hover {
+    background: #1e7e34;
+    color: white;
+}
+
 .btn-warning {
     background: #ffc107;
     color: #212529;
 }
 
+.btn-warning:hover {
+    background: #e0a800;
+    color: #212529;
+}
+
+.btn-teal-400 {
+    background: #26a69a;
+    border-color: #26a69a;
+    color: white;
+}
+
+.btn-teal-400:hover {
+    background: #26a69a;
+    border-color: #26a69a;
+    color: white;
+    opacity: 0.9;
+}
+
 .alert {
     padding: 15px;
     margin-bottom: 20px;
-    border-radius: 5px;
+    border-radius: 3px;
+    border: 1px solid transparent;
 }
 
 .alert-success {
     background: #d4edda;
     color: #155724;
-    border: 1px solid #c3e6cb;
+    border-color: #c3e6cb;
 }
 
 .alert-danger {
     background: #f8d7da;
     color: #721c24;
-    border: 1px solid #f5c6cb;
+    border-color: #f5c6cb;
 }
 
 .export-grid {
@@ -747,9 +807,10 @@ function exportReceivings($db) {
 .export-card {
     background: #f8f9fa;
     padding: 20px;
-    border-radius: 5px;
+    border-radius: 4px;
     border: 1px solid #ddd;
     text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .export-card h4 {
@@ -766,8 +827,9 @@ function exportReceivings($db) {
 .file-list {
     background: #f8f9fa;
     padding: 15px;
-    border-radius: 5px;
+    border-radius: 4px;
     margin-top: 20px;
+    border: 1px solid #ddd;
 }
 
 .file-list h4 {
@@ -798,173 +860,244 @@ function exportReceivings($db) {
 .file-list a:hover {
     text-decoration: underline;
 }
+
+.panel {
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+}
+
+.panel-white {
+    background: white;
+}
+
+.panel-heading {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    background: #f8f9fa;
+    border-radius: 4px 4px 0 0;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.panel-body {
+    padding: 20px;
+}
+
+.border-top-teal-400 {
+    border-top-color: #26a69a !important;
+}
+
+.text-teal-400 {
+    color: #26a69a !important;
+}
+
+.border-top-xlg {
+    border-top-width: 4px !important;
+}
 </style>
 
-<div class="page-container">
-    <div class="page-content">
-        <div class="content-wrapper">
-            <div class="page-header page-header-default">
-                <div class="page-header-content">
-                    <div class="page-title">
-                        <h4><i class="icon-download2 position-left"></i> <span class="text-semibold">Export Database Data</span></h4>
-                    </div>
-                </div>
-                <div class="breadcrumb-line">
-                    <ul class="breadcrumb">
-                        <li><a href="index.php"><i class="icon-home2 position-left"></i> Dashboard</a></li>
-                        <li class="active"><i class="icon-download2 position-left"></i> Export Data</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="content">
-                <div class="export-container">
-                    <h2><i class="icon-database"></i> Export Your Actual Database Data</h2>
-                    <p>Download your real data from the database as Excel files. Choose specific tables or export everything at once.</p>
-                    
-                    <?php if ($message): ?>
-                    <div class="alert alert-<?php echo strpos($message, 'Error') !== false ? 'danger' : 'success'; ?>">
-                        <?php echo $message; ?>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <form method="POST" class="export-form" action="export_handler.php" target="_blank">
-                        <div class="form-group">
-                            <label for="export_type">Select what to export:</label>
-                            <select name="export_type" id="export_type" class="form-control" required>
-                                <option value="">Choose export type...</option>
-                                <option value="products">Products</option>
-                                <option value="members">Members</option>
-                                <option value="customers">Customers</option>
-                                <option value="sales">Sales</option>
-                                <option value="expenses">Expenses</option>
-                                <option value="suppliers">Suppliers</option>
-                                <option value="receivings">Receivings (Stock In)</option>
-                                <option value="capital_share">💰 Capital Share</option>
-                                <option value="deposits">💳 Deposits (Savings)</option>
-                                <option value="client_balance">📊 Client Balance Summary</option>
-                                <option value="all">🎉 Export All Data</option>
-                            </select>
+<body class="layout-boxed navbar-top">
+   <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <?php require('includes/sidebar.php'); ?>
+        </div>
+    </div>
+
+    <div class="page-container">
+        <div class="page-content">
+            <div class="content-wrapper">
+                <div class="page-header page-header-default">
+                    <div class="page-header-content">
+                        <div class="page-title">
+                            <h4><i class="icon-arrow-left52 position-left"></i> <span class="text-semibold">Dashboard</span> - Export Data</h4>
                         </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="icon-download"></i> Export Data
-                        </button>
-                    </form>
-                    
-                    <?php if (!empty($export_files)): ?>
-                    <div class="file-list">
-                        <h4><i class="icon-file-excel"></i> Download Your Exported Files:</h4>
-                        <ul>
-                            <?php foreach ($export_files as $file): ?>
+                    </div>
+                    <div class="breadcrumb-line">
+                        <ul class="breadcrumb">
+                            <li><a href="index.php"><i class="icon-home2 position-left"></i> Dashboard</a></li>
+                            <li class="active"><i class="icon-file-excel"></i> Export Excel Data</li>
+                        </ul>
+                          <ul class="breadcrumb-elements">
                             <li>
-                                <a href="<?php echo $file; ?>" download>
-                                    <i class="icon-download"></i> <?php echo basename($file); ?>
+                                <a href="import_excel.php">
+                                    <i class="icon-stats-bars2 text-orange-400"></i> Import Data    
                                 </a>
                             </li>
-                            <?php endforeach; ?>
                         </ul>
                     </div>
-                    <?php endif; ?>
-                    
-                    <div class="export-grid">
-                        <div class="export-card">
-                            <h4>Products</h4>
-                            <p>All product information, prices, and inventory data</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="products">
-                                <button type="submit" class="btn btn-success">Export Products</button>
-                            </form>
+                </div>
+                
+                <div class="content">
+                    <div class="panel panel-white border-top-xlg border-top-teal-400">
+                        <div class="panel-heading">
+                            <h6 class="panel-title text-teal-400"><i class="icon-database"></i> Export Your Actual Database Data</h6>
                         </div>
-                        
-                        <div class="export-card">
-                            <h4>Members</h4>
-                            <p>Complete member database with contact details</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="members">
-                                <button type="submit" class="btn btn-success">Export Members</button>
+                        <div class="panel-body">
+                            <p>Download your real data from the database as Excel files. Choose specific tables or export everything at once.</p>
+                            
+                            <?php if ($message): ?>
+                            <div class="alert alert-<?php echo strpos($message, 'Error') !== false ? 'danger' : 'success'; ?>">
+                                <?php echo $message; ?>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <form method="POST" class="export-form">
+                                <div class="form-group">
+                                    <label for="export_type">Select what to export:</label>
+                                    <select name="export_type" id="export_type" class="form-control" required>
+                                        <option value="">Choose export type...</option>
+                                        <option value="products">Products</option>
+                                        <option value="members">Members</option>
+                                        <option value="customers">Customers</option>
+                                        <option value="sales">Sales</option>
+                                        <option value="expenses">Expenses</option>
+                                        <option value="suppliers">Suppliers</option>
+                                        <option value="receivings">Receivings (Stock In)</option>
+                                        <option value="capital_share">💰 Capital Share</option>
+                                        <option value="deposits">💳 Deposits (Savings)</option>
+                                        <option value="client_balance">📊 Client Balance Summary</option>
+                                        <option value="all">🎉 Export All Data</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="text-right">
+                                    <button type="submit" class="btn btn-teal-400">
+                                        <i class="icon-download"></i> Export Data
+                                    </button>
+                                </div>
                             </form>
+                            
+                            <?php if (!empty($export_files)): ?>
+                            <div class="file-list">
+                                <h4><i class="icon-file-excel"></i> Download Your Exported Files:</h4>
+                                <ul>
+                                    <?php foreach ($export_files as $file): ?>
+                                    <li>
+                                        <a href="<?php echo $file; ?>" download>
+                                            <i class="icon-download"></i> <?php echo basename($file); ?>
+                                        </a>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <?php endif; ?>
+                        </div>  
+                    </div>
+                    <div class="panel panel-white border-top-xlg border-top-info">
+                        <div class="panel-heading">
+                            <h6 class="panel-title"><i class="icon-download"></i> Quick Export Options</h6>
                         </div>
-                        
-                        <div class="export-card">
-                            <h4>Customers</h4>
-                            <p>Customer information and contact details</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="customers">
-                                <button type="submit" class="btn btn-success">Export Customers</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>Sales</h4>
-                            <p>All sales transactions and order history</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="sales">
-                                <button type="submit" class="btn btn-success">Export Sales</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>Expenses</h4>
-                            <p>Expense records and financial data</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="expenses">
-                                <button type="submit" class="btn btn-success">Export Expenses</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>Suppliers</h4>
-                            <p>Supplier information and contact data</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="suppliers">
-                                <button type="submit" class="btn btn-success">Export Suppliers</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>Receivings</h4>
-                            <p>Stock-in records and inventory movements</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="receivings">
-                                <button type="submit" class="btn btn-success">Export Receivings</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>💰 Capital Share</h4>
-                            <p>Client capital share contributions with totals</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="capital_share">
-                                <button type="submit" class="btn btn-success">Export Capital Share</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>💳 Deposits (Savings)</h4>
-                            <p>All deposit transactions and balances</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="deposits">
-                                <button type="submit" class="btn btn-success">Export Deposits</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>📊 Client Balance Summary</h4>
-                            <p>Complete client balance report with capital + savings</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="client_balance">
-                                <button type="submit" class="btn btn-success">Export Balance Summary</button>
-                            </form>
-                        </div>
-                        
-                        <div class="export-card">
-                            <h4>🎉 Export All</h4>
-                            <p>Download complete database backup</p>
-                            <form method="POST" action="export_handler.php" target="_blank">
-                                <input type="hidden" name="export_type" value="all">
-                                <button type="submit" class="btn btn-warning">Export Everything</button>
-                            </form>
+                        <div class="panel-body">
+                            <div class="export-grid">
+                                <div class="export-card">
+                                    <h4>Products</h4>
+                                    <p>All product information, prices, and inventory data</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="products">
+                                        <button type="submit" class="btn btn-success">Export Products</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4>Members</h4>
+                                    <p>Complete member database with contact details</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="members">
+                                        <button type="submit" class="btn btn-success">Export Members</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4>Customers</h4>
+                                    <p>Customer information and contact details</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="customers">
+                                        <button type="submit" class="btn btn-success">Export Customers</button>
+                                    </form>
+                                </div>
+                                        
+                                <div class="export-card">
+                                    <h4>Sales</h4>
+                                    <p>All sales transactions and order history</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="sales">
+                                        <button type="submit" class="btn btn-success">Export Sales</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4>Expenses</h4>
+                                    <p>Expense records and financial data</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="expenses">
+                                        <button type="submit" class="btn btn-success">Export Expenses</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4>Suppliers</h4>
+                                    <p>Supplier information and contact data</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="suppliers">
+                                        <button type="submit" class="btn btn-success">Export Suppliers</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4>Receivings</h4>
+                                    <p>Stock-in records and inventory movements</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="receivings">
+                                        <button type="submit" class="btn btn-success">Export Receivings</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4> Capital Share</h4>
+                                    <p>Client capital share contributions with totals</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="capital_share">
+                                        <button type="submit" class="btn btn-success">Export Capital Share</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4> Deposits (Savings)</h4>
+                                    <p>All deposit transactions and balances</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="deposits">
+                                        <button type="submit" class="btn btn-success">Export Deposits</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="export-card">
+                                    <h4> Members Balance Summary</h4>
+                                    <p>Complete client balance report with capital + savings</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="client_balance">
+                                        <button type="submit" class="btn btn-success">Export Balance Summary</button>
+                                    </form>
+                                </div>
+
+                                <div class="export-card">
+                                    <h4> Export All</h4>
+                                    <p>Download complete database backup</p>
+                                    <form method="POST">
+                                        <input type="hidden" name="export_type" value="all">
+                                        <button type="submit" class="btn btn-warning">Export Everything</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

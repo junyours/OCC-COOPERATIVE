@@ -105,7 +105,7 @@ function getPurchasesData($db, $start_date, $end_date) {
 }
 
 function getCapitalSharesData($db, $start_date, $end_date) {
-    // Simplified approach based on financial.php reference - just sum all amounts
+    //   Simplified approach based on financial.php reference - just sum all amounts
     $query = "SELECT 
         SUM(t.amount) as total_capital, 
         COUNT(*) as total_shares, 
@@ -685,11 +685,11 @@ foreach ($ratiosData as $data) {
     $row++;
 }
 
-// Create Charts Sheet with Enhanced Data and Conditional Formatting
+
 $chartsSheet = $spreadsheet->createSheet();
 $chartsSheet->setTitle('Charts & Graphs');
 
-// Monthly Sales Chart Data with Visual Enhancement
+
 $chartsRow = 1;
 $chartsSheet->setCellValue('A1', 'MONTHLY SALES TREND');
 $chartsSheet->getStyle('A1')->applyFromArray($headerStyle);
@@ -828,7 +828,7 @@ foreach ($portfolioData as $data) {
     $totalPortfolio += abs($data[1]);
 }
 
-$pieColors = ['2196F3', '4CAF50', 'FF9800', 'F44336']; // Blue, Green, Orange, Red
+$pieColors = ['2196F3', '4CAF50', 'FF9800', 'F44336']; 
 $pieStartRow = $chartsRow + 1;
 
 foreach ($portfolioData as $index => $data) {
@@ -838,7 +838,7 @@ foreach ($portfolioData as $index => $data) {
     $chartsSheet->setCellValue('B'.$chartsRow, $data[1]);
     $chartsSheet->setCellValue('C'.$chartsRow, number_format($percentage, 1) . '%');
     
-    // Create visual pie slice representation
+
     $sliceSize = round(($percentage / 100) * 20);
     $color = $pieColors[$index % count($pieColors)];
     

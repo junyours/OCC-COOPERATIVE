@@ -40,8 +40,15 @@ if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {
 	<link rel="manifest" href="/manifest.json">
 	<meta name="theme-color" content="#0052a4">
 	<link rel="apple-touch-icon" href="/assets/icons/your_logo.png">
-	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-	<title>OCC Cooperative</title>
+	
+	<!-- Favicon for browser tab -->
+	<link rel="icon" type="image/x-icon" href="../images/main_logo.jpg">
+	<link rel="shortcut icon" href="../images/main_logo.jpg">
+	<link rel="icon" type="image/png" sizes="32x32" href="../images/main_logo.jpg">
+	<link rel="icon" type="image/png" sizes="16x16" href="../images/main_logo.jpg">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
+	
+	<title>OCCECC</title>
 
 	<!-- Global stylesheets -->
 	<!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,100,500,700,900" rel="stylesheet" type="text/css"> -->

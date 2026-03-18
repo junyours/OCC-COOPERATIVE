@@ -73,7 +73,7 @@ $member_name = $loan['first_name'] . ' ' . $loan['last_name'];
         font-weight: bold;
         color: #fff !important;
         background-color: #26a69a !important;
-        /* your main tab color */
+        /* your main tab color */   
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 </style>
@@ -81,17 +81,17 @@ $member_name = $loan['first_name'] . ' ' . $loan['last_name'];
 <body class="layout-boxed navbar-top">
     <!-- Navbar -->
     <!-- Main navbar -->
-    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
-        <div class="navbar-header">
-            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
-            <ul class="nav navbar-nav visible-xs-block">
-                <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
-            </ul>
-        </div>
-        <div class="navbar-collapse collapse" id="navbar-mobile">
-            <?php require('includes/sidebar.php'); ?>
-        </div>
-    </div>
+     <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+                    <ul class="nav navbar-nav visible-xs-block">
+                        <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
+                    </ul>
+                </div>
+                <div class="navbar-collapse collapse" id="navbar-mobile">
+                    <?php require('includes/sidebar.php'); ?>
+                </div>
+            </div>
 
     <div class="page-container">
         <div class="page-content">

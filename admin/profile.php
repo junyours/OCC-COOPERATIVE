@@ -79,7 +79,6 @@ $result = $db->query($query);
 					</div>
 				</div>
 				<!-- /page header -->
-
 				<!-- Content area -->
 				<div class="content">
 
@@ -110,11 +109,11 @@ $result = $db->query($query);
 								<div class="form-body" style="padding-top: 20px">
 
 									<div class="form-group">
-										<label for="exampleInputuname_4" class="col-sm-3 control-label">Fullname</label>
+										<label for="exampleInputuname_4" class="col-sm-3 control-label">FullName</label>
 										<div class="col-sm-9">
 											<div class="input-group input-group-xlg">
 												<span class="input-group-addon"><i class="icon-pencil7"></i></span>
-												<input value="<?= $name ?>" class="form-control currency" autocomplete="off" name="name" id="fullname" placeholder="Full Name" type="text" disabled="" data-error=" Employee Name is required." required>
+												<input value="<?= $name ?>" class="form-control currency" autocomplete="off" name="name" id="fullname" placeholder="Full Name" type="text" data-error=" Employee Name is required." required>
 											</div>
 											<div class="help-block with-errors"></div>
 										</div>
@@ -154,21 +153,32 @@ $result = $db->query($query);
 				<!-- /content area -->
 				<?php require('includes/footer-text.php'); ?>
 
-
 			</div>
 			<!-- /main content -->
-
 
 		</div>
 		<!-- /page content -->
 
-
 	</div>
 	<!-- /page container -->
+	<div class="modal fade" id="confirmModal" tabindex="-1">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-header bg-teal-400">
+					<h5 class="modal-title text-white">Confirm Update</h5>
+				</div>
+				<center>Are you sure you want to save changes?</center>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn bg-teal-400" id="confirmSave">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
 
+</body>
 <?php require('includes/footer.php'); ?>
-
 
 <script type="text/javascript" src="../assets/js/plugins/tables/datatables/datatables.min.js"></script>
 <script type="text/javascript" src="../assets/js/plugins/notifications/jgrowl.min.js"></script>
@@ -248,7 +258,7 @@ $result = $db->query($query);
 
 		let pass = $('#password').val();
 
-		// If password field touched but too short
+		// If p	assword field touched but too short
 		if (pass.length > 0 && pass.length < 4) {
 			$.jGrowl('Password must be at least 4 characters.', {
 				header: 'Validation Error',

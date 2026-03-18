@@ -180,6 +180,9 @@ function exportMembers($db) {
     
     // Define all possible columns and their headers
     $possible_columns = [
+        'member_id' => 'Member ID', 
+        'user_id' => 'User ID',
+        'cust_id' => 'Customer ID',
         'first_name' => 'First Name',
         'last_name' => 'Last Name',
         'middle_name' => 'Middle Name',
@@ -192,14 +195,14 @@ function exportMembers($db) {
         'membership_date' => 'Membership Date'
     ];
     
-    // Check which columns actually exist
+   
     $result = $db->query("SHOW COLUMNS FROM tbl_members");
     $existing_columns = [];
     while ($row = $result->fetch_assoc()) {
         $existing_columns[] = $row['Field'];
     }
     
-    // Build headers and column lists based on existing columns
+    
     foreach ($possible_columns as $col => $header) {
         if (in_array($col, $existing_columns)) {
             $columns_to_export[] = $col;
@@ -207,15 +210,15 @@ function exportMembers($db) {
         }
     }
     
-    // Set headers
+    
     $sheet->fromArray($headers_to_export, null, 'A1');
     
-    // Style headers
+   
     $last_col = chr(ord('A') + count($headers_to_export) - 1);
     $sheet->getStyle('A1:' . $last_col . '1')->getFont()->setBold(true);
     $sheet->getStyle('A1:' . $last_col . '1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE0E0E0');
     
-    // Get data from database
+   
     $query = "SELECT " . implode(', ', $columns_to_export) . " FROM tbl_members ORDER BY member_id";
     $result = $db->query($query);
     
@@ -229,7 +232,7 @@ function exportMembers($db) {
         $row++;
     }
     
-    // Auto-size columns
+   
     foreach (range('A', $last_col) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
@@ -244,11 +247,11 @@ function exportCustomers($db) {
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
     
-    // Check which columns exist in the table
+   
     $columns_to_export = [];
     $headers_to_export = [];
     
-    // Define all possible columns and their headers
+   
     $possible_columns = [
         'cust_id' => 'Customer ID',
         'name' => 'Name',
@@ -256,7 +259,7 @@ function exportCustomers($db) {
         'contact' => 'Contact'
     ];
     
-    // Check which columns actually exist
+    
     $result = $db->query("SHOW COLUMNS FROM tbl_customer");
     $existing_columns = [];
     while ($row = $result->fetch_assoc()) {
@@ -280,7 +283,7 @@ function exportCustomers($db) {
     $sheet->getStyle('A1:' . $last_col . '1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE0E0E0');
     
     // Get data from database
-    $query = "SELECT " . implode(', ', $columns_to_export) . " FROM tbl_customer ORDER BY cust_id";
+    $query = "SELECT" . implode(', ', $columns_to_export) . " FROM tbl_customer ORDER BY cust_id";
     $result = $db->query($query);
     
     $row = 2;
@@ -383,8 +386,7 @@ function exportExpenses($db) {
     foreach (range('A', 'F') as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
-    
-    $filename = 'exports/expenses_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $filename = 'exports/expenses_' . date('Y-m-d_H-i-s') . '.xlsx';
     $writer = new Xlsx($spreadsheet);
     $writer->save($filename);
     return $filename;

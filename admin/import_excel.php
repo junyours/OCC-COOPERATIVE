@@ -7,9 +7,10 @@ require_once('../db_connect.php');
 $message = '';
 $imported_count = 0;
 $error_count = 0;
+$error_details = []; // Track specific error details
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['excel_file'])) {
-    require_once '../vendor/autoload.php'; // Make sure you have PhpSpreadsheet installed
+    require_once '../vendor/autoload.php'; 
     
     try {
         $file = $_FILES['excel_file'];
@@ -35,7 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['excel_file'])) {
         $table_mapping = getTableMapping($import_type);
         
         // Start transaction
-        $db->begin_transaction();
+        $db->begin_transaction();   
+        
+        // Disable foreign key checks for member import
+        if ($import_type === 'members') {
+            $db->query("SET FOREIGN_KEY_CHECKS = 0");
+        }
         
         // Process each row
         for ($row = 2; $row <= $highest_row; $row++) { // Start from row 2 (skip headers)
@@ -44,12 +50,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['excel_file'])) {
             // Read each column based on mapping
             foreach ($table_mapping['columns'] as $excel_col => $db_col) {
                 $cell_value = $worksheet->getCell($excel_col . $row)->getValue();
-                $data[$db_col] = trim($cell_value ?? '');
+                $data[$db_col] = trim($cell_value ?? '');   
+            }
+            
+            // Debug: Log the data for problematic rows
+            if ($row >= 3 && $row <= 6) {
+                error_log("Row $row data: " . json_encode($data));
+            }
+            
+            // Skip completely empty rows
+            if (empty(array_filter($data))) {
+                continue;
             }
             
             // Validate required fields
-            if (!validateRequiredFields($data, $table_mapping['required'])) {
+            $validation_result = validateRequiredFields($data, $table_mapping['required']);
+            if (!$validation_result) {
                 $error_count++;
+                $missing_fields = [];
+                foreach ($table_mapping['required'] as $field) {
+                    if (!isset($data[$field]) || empty(trim($data[$field]))) {
+                        $missing_fields[] = $field;
+                    }
+                }
+                $error_details[] = "Row $row: Missing required fields - " . implode(', ', $missing_fields);
                 continue;
             }
             
@@ -58,11 +82,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['excel_file'])) {
                 $imported_count++;
             } else {
                 $error_count++;
+                $error_details[] = "Row $row: Database insertion failed";
             }
         }
         
         $db->commit();
+        
+        // Re-enable foreign key checks
+        if ($import_type === 'members') {
+            $db->query("SET FOREIGN_KEY_CHECKS = 1");
+        }
+        
         $message = "Import completed! Successfully imported: $imported_count records. Errors: $error_count records.";
+        
+        if (!empty($error_details)) {
+            $message .= "<br><strong>Error Details:</strong><br>" . implode('<br>', array_slice($error_details, 0, 5));
+            if (count($error_details) > 5) {
+                $message .= "<br>...and " . (count($error_details) - 5) . " more errors.";
+            }
+        }
         
     } catch (Exception $e) {
         $db->rollback();
@@ -93,7 +131,7 @@ function getTableMapping($import_type) {
                 'product_id' => 'int',
                 'cat_id' => 'int',
                 'quantity' => 'int',
-                'selling_price' => 'decimal',
+                'selling_price' => 'decimal',       
                 'supplier_price' => 'decimal',
                 'critical_qty' => 'int',
                 'field_status' => 'int'
@@ -102,18 +140,19 @@ function getTableMapping($import_type) {
         'members' => [
             'table' => 'tbl_members',
             'columns' => [
-                'A' => 'firt_name',
+                'A' => 'first_name',
                 'B' => 'last_name',
                 'C' => 'middle_name',
                 'D' => 'gender',
-                'E' => 'birthdate',
-                'F' => 'phone',
+                'E' => 'phone',
+                'F' => 'address',
                 'G' => 'email',
-                'H' => 'address',
-                'I' => 'type'
+                'H' => 'tin'
             ],
             'required' => ['first_name', 'last_name'],
-            'data_types' => []
+            'data_types' => [],
+            'optional_fields' => ['user_id', 'membership_date'  ] 
+           
         ],
         'customers' => [
             'table' => 'tbl_customer',
@@ -198,15 +237,51 @@ function getTableMapping($import_type) {
 }
 
 function validateRequiredFields($data, $required_fields) {
+    $missing = [];
     foreach ($required_fields as $field) {
-        if (empty($data[$field])) {
-            return false;
+        if (!isset($data[$field]) || empty(trim($data[$field]))) {
+            $missing[] = $field;
         }
     }
-    return true;
+    
+    // Return true if no missing fields, false otherwise
+    return empty($missing);
 }
 
 function insertData($db, $table, $data, $data_types) {
+    // For members table, handle user_id as optional (set to 0 temporarily)
+    if ($table === 'tbl_members') {
+        if (!isset($data['user_id'])) {
+            $data['user_id'] = 0; // Temporary value, will be updated when user is created
+        }
+        
+        // Normalize gender to match ENUM values
+        if (isset($data['gender']) && !empty($data['gender'])) {
+            $gender = strtolower(trim($data['gender']));
+            if (in_array($gender, ['male', 'm'])) {
+                $data['gender'] = 'Male';
+            } elseif (in_array($gender, ['female', 'f'])) {
+                $data['gender'] = 'Female';
+            } else {
+                $data['gender'] = 'Other'; // Default to Other for unrecognized values
+            }
+        } else {
+            // Set gender to NULL if not provided (since column allows NULL)
+            $data['gender'] = null;
+        }
+        
+        // Set default values for required fields if not provided
+        if (!isset($data['status'])) {
+            $data['status'] = 'active';
+        }
+        if (!isset($data['type'])) {
+            $data['type'] = 'regular';
+        }
+        if (!isset($data['membership_date'])) {
+            $data['membership_date'] = date('Y-m-d H:i:s');
+        }
+    }
+    
     $columns = array_keys($data);
     $placeholders = array_fill(0, count($columns), '?');
     
@@ -249,12 +324,34 @@ function insertData($db, $table, $data, $data_types) {
 ?>
 
 <style>
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    font-weight: 800;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+    margin-right: 12px;
+    border-radius: 20px;
+}
+
+.navbar-brand span {
+    white-space: nowrap;
+}
+
 .import-container {
     background: white;
     padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin: 20px 0;
+    border: 1px solid #ddd;
 }
 
 .import-form {
@@ -275,24 +372,37 @@ function insertData($db, $table, $data, $data_types) {
 
 .form-control {
     width: 100%;
-    padding: 10px;
+    padding: 8px 12px;
     border: 1px solid #ddd;
-    border-radius: 5px;
+    border-radius: 3px;
     font-size: 14px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #26a69a;
+    box-shadow: 0 0 0 0.2rem rgba(38, 166, 154, 0.25);
 }
 
 .btn {
-    padding: 10px 20px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 5px;
+    border-radius: 3px;
     cursor: pointer;
     font-size: 14px;
     text-decoration: none;
     display: inline-block;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
 }
 
 .btn-primary {
     background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
     color: white;
 }
 
@@ -301,29 +411,49 @@ function insertData($db, $table, $data, $data_types) {
     color: white;
 }
 
+.btn-success:hover {
+    background: #1e7e34;
+    color: white;
+}
+
+.btn-teal-400 {
+    background: #26a69a;
+    border-color: #26a69a;
+    color: white;
+}
+
+.btn-teal-400:hover {
+    background: #26a69a;
+    border-color: #26a69a;
+    color: white;
+    opacity: 0.9;
+}
+
 .alert {
     padding: 15px;
     margin-bottom: 20px;
-    border-radius: 5px;
+    border-radius: 3px;
+    border: 1px solid transparent;
 }
 
 .alert-success {
     background: #d4edda;
     color: #155724;
-    border: 1px solid #c3e6cb;
+    border-color: #c3e6cb;
 }
 
 .alert-danger {
     background: #f8d7da;
     color: #721c24;
-    border: 1px solid #f5c6cb;
+    border-color: #f5c6cb;
 }
 
 .template-section {
     background: #f8f9fa;
     padding: 20px;
-    border-radius: 5px;
+    border-radius: 4px;
     margin: 20px 0;
+    border: 1px solid #ddd;
 }
 
 .template-grid {
@@ -336,9 +466,10 @@ function insertData($db, $table, $data, $data_types) {
 .template-card {
     background: white;
     padding: 15px;
-    border-radius: 5px;
+    border-radius: 4px;
     border: 1px solid #ddd;
     text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .template-card h4 {
@@ -356,151 +487,153 @@ function insertData($db, $table, $data, $data_types) {
     border: 2px dashed #ddd;
     padding: 40px;
     text-align: center;
-    border-radius: 5px;
+    border-radius: 4px;
     margin: 20px 0;
     transition: border-color 0.3s;
+    background: #fafafa;
 }
 
 .file-upload:hover {
-    border-color: #007bff;
+    border-color: #26a69a;
 }
 
 .file-upload.dragover {
-    border-color: #007bff;
+    border-color: #26a69a;
     background: #f8f9ff;
+}
+
+.panel {
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+}
+
+.panel-white {
+    background: white;
+}
+
+.panel-heading {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    background: #f8f9fa;
+    border-radius: 4px 4px 0 0;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.panel-body {
+    padding: 20px;
+}
+
+.border-top-teal-400 {
+    border-top-color: #26a69a !important;
+}
+
+.text-teal-400 {
+    color: #26a69a !important;
+}
+
+.border-top-xlg {
+    border-top-width: 4px !important;
 }
 </style>
 
-<div class="page-container">
-    <div class="page-content">
-        <div class="content-wrapper">
-            <div class="page-header page-header-default">
-                <div class="page-header-content">
-                    <div class="page-title">
-                        <h4><i class="icon-arrow-left52 position-left"></i> <span class="text-semibold">Excel Import</span></h4>
-                    </div>
-                </div>
-                <div class="breadcrumb-line">
-                    <ul class="breadcrumb">
-                        <li><a href="index.php"><i class="icon-home2 position-left"></i> Dashboard</a></li>
-                        <li class="active"><i class="icon-upload position-left"></i> Excel Import</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="content">
-                <div class="import-container">
-                    <h2><i class="icon-file-excel"></i> Import Data from Excel</h2>
-                    <p>Upload your Excel file to import data into the system. Make sure your data matches the required format.</p>
-                    
-                    <?php if ($message): ?>
-                    <div class="alert alert-<?php echo $error_count > 0 ? 'danger' : 'success'; ?>">
-                        <?php echo $message; ?>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <form method="POST" enctype="multipart/form-data" class="import-form">
-                        <div class="form-group">
-                            <label for="import_type">What type of data are you importing?</label>
-                            <select name="import_type" id="import_type" class="form-control" required>
-                                <option value="">Select data type...</option>
-                                <option value="products">Products</option>
-                                <option value="members">Members</option>
-                                <option value="customers">Customers</option>
-                                <option value="sales">Sales</option>
-                                <option value="expenses">Expenses</option>
-                                <option value="suppliers">Suppliers</option>
-                                <option value="receivings">Receivings (Stock In)</option>
-                            </select>
+<body class="layout-boxed navbar-top">
+   <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <?php require('includes/sidebar.php'); ?>
+        </div>
+    </div>
+
+    <div class="page-container">
+        <div class="page-content">
+            <div class="content-wrapper">
+                <div class="page-header page-header-default">
+                    <div class="page-header-content">
+                        <div class="page-title">
+                            <h4><i class="icon-arrow-left52 position-left"></i> <span class="text-semibold">Dashboard</span> - Excel Import</h4>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="excel_file">Choose Excel File</label>
-                            <div class="file-upload" id="fileDropZone">
-                                <i class="icon-file-excel" style="font-size: 48px; color: #28a745;"></i>
-                                <p>Drag & drop your Excel file here or click to browse</p>
-                                <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls,.csv" required style="display: none;">
+                    </div>
+                    <div class="breadcrumb-line">
+                        <ul class="breadcrumb">
+                            <li><a href="index.php"><i class="icon-home2 position-left"></i> Dashboard</a></li>
+                            <li><a href="export_data.php"><i class="icon-upload position-left"></i>Export Data</a></li>
+                            <li class="active"><i class="icon-file-excel"></i> Excel Import</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="content">
+                    <div class="panel panel-white border-top-xlg border-top-teal-400">
+                        <div class="panel-heading">
+                            <h6 class="panel-title text-teal-400"><i class="icon-file-excel"></i> Import Data from Excel</h6>
+                        </div>
+                        <div class="panel-body">
+                            <p>Upload your Excel file to import data into the system. Make sure your data matches the required format.</p>
+                            
+                            <?php if ($message): ?>
+                            <div class="alert alert-<?php echo $error_count > 0 ? 'danger' : 'success'; ?>">
+                                <?php echo $message; ?>
                             </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="icon-upload"></i> Import Data
-                        </button>
-                    </form>
-                </div>
-                
-                <div class="template-section">
-                    <h3><i class="icon-download"></i> Download Excel Templates</h3>
-                    <p>Use these templates to ensure your data is in the correct format for import.</p>
-                    
-                    <div class="template-grid">
-                        <div class="template-card">
-                            <h4>Products</h4>
-                            <p>Import product information, prices, and inventory</p>
-                            <a href="templates/products_template.xlsx" class="btn btn-success">
-                                <i class="icon-download"></i> Download
-                            </a>
-                        </div>
-                        
-                        <div class="template-card">
-                            <h4>Members</h4>
-                            <p>Import member information and contact details</p>
-                            <a href="templates/members_template.xlsx" class="btn btn-success">
-                                <i class="icon-download"></i> Download
-                            </a>
-                        </div>
-                        
-                        <div class="template-card">
-                            <h4>Customers</h4>
-                            <p>Import customer information</p>
-                            <a href="templates/customers_template.xlsx" class="btn btn-success">
-                                <i class="icon-download"></i> Download
-                            </a>
-                        </div>
-                        
-                        <div class="template-card">
-                            <h4>Sales</h4>
-                            <p>Import sales transactions and orders</p>
-                            <a href="templates/sales_template.xlsx" class="btn btn-success">
-                                <i class="icon-download"></i> Download
-                            </a>
-                        </div>
-                        
-                        <div class="template-card">
-                            <h4>Expenses</h4>
-                            <p>Import expense records and categories</p>
-                            <a href="templates/expenses_template.xlsx" class="btn btn-success">
-                                <i class="icon-download"></i> Download
-                            </a>
-                        </div>
-                        
-                        <div class="template-card">
-                            <h4>Suppliers</h4>
-                            <p>Import supplier information</p>
-                            <a href="templates/suppliers_template.xlsx" class="btn btn-success">
-                                <i class="icon-download"></i> Download
-                            </a>
-                        </div>
-                        
-                        <div class="template-card">
-                            <h4>Receivings</h4>
-                            <p>Import stock-in/receiving records</p>
-                            <a href="templates/receivings_template.xlsx" class="btn btn-success">
-                                <i class="icon-download"></i> Download
-                            </a>
+                            <?php endif;?>
+                            
+                            <form method="POST" enctype="multipart/form-data" class="import-form">
+                                <div class="form-group">
+                                    <label for="import_type">What type of data are you importing?</label>
+                                    <select name="import_type" id="import_type" class="form-control" required>
+                                        <option value="">Select data type...</option>
+                                        <option value="products">Products</option>
+                                        <option value="members">Members</option>
+                                        <option value="customers">Customers</option>
+                                        <option value="sales">Sales</option>
+                                        <option value="expenses">Expenses</option>
+                                        <option value="suppliers">Suppliers</option>
+                                        <option value="receivings">Receivings (Stock In)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="excel_file">Choose Excel File</label>
+                                    <div class="file-upload" id="fileDropZone">
+                                        <i class="icon-file-excel" style="font-size: 48px; color: #28a745;"></i>
+                                        <p>Drag & drop your Excel file here or click to browse</p>
+                                        <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls,.csv" required style="display: none;">
+                                    </div>
+                                </div>
+                                
+                                <div class="text-right">
+                                    <button type="submit" class="btn btn-teal-400">
+                                        <i class="icon-upload"></i> Import Data
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                </div>
                 
-                <div class="import-container">
-                    <h3><i class="icon-info"></i> Import Guidelines</h3>
-                    <ul>
-                        <li><strong>File Format:</strong> Use .xlsx, .xls, or .csv files</li>
-                        <li><strong>Headers:</strong> First row should contain column headers</li>
-                        <li><strong>Data Validation:</strong> Required fields cannot be empty</li>
-                        <li><strong>Duplicates:</strong> Check for existing records before importing</li>
-                        <li><strong>Backup:</strong> Always backup your database before importing</li>
-                    </ul>
+                
+                    <div class="panel panel-white border-top-xlg border-top-warning">
+                        <div class="panel-heading">
+                            <h6 class="panel-title"><i class="icon-info"></i> Import Guidelines</h6>
+                        </div>
+                        <div class="panel-body">
+                            <ul>
+                                <li><strong>File Format:</strong> Use .xlsx, .xls, or .csv files</li>
+                                <li><strong>Headers:</strong> First row should contain column headers</li>
+                                <li><strong>Data Validation:</strong> Required fields cannot be empty</li>
+                                <li><strong>Duplicates:</strong> Check for existing records before importing</li>
+                                <li><strong>Backup:</strong> Always backup your database before importing</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

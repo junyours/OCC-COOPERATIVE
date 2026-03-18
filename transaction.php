@@ -64,6 +64,431 @@ if (isset($_POST['check-login'])) {
     }
 }
 
+// Email validation for registration
+if (isset($_POST['validate_email'])) {
+    require('db_connect.php');
+    
+    $email = trim($_POST['validate_email']);
+    
+    // Basic email format validation
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Please enter a valid email address.'
+        ]);
+        exit;
+    }
+    
+    // Check if email already exists in tbl_users
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM tbl_users WHERE username = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    
+    if ($row['count'] > 0) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'This email is already registered for an account.'
+        ]);
+        $stmt->close();
+        exit;
+    }
+    
+    // Check if email exists in tbl_members and get member info
+    $stmt = $db->prepare("
+        SELECT m.member_id, m.first_name, m.last_name, m.middle_name, m.email, m.phone, m.address,
+               m.user_id, u.username 
+        FROM tbl_members m 
+        LEFT JOIN tbl_users u ON m.user_id = u.user_id 
+        WHERE m.email = ? AND m.status = 'active'
+    ");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $member = $result->fetch_assoc();
+        
+        // Check if member already has user account
+        if ($member['user_id'] && $member['username']) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'This member already has login credentials registered.'
+            ]);
+        } else {
+            $fullname = trim($member['first_name'] . ' ' . $member['last_name']);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Email found in member records. Registration available.',
+                'member' => [
+                    'member_id' => $member['member_id'],
+                    'first_name' => $member['first_name'],
+                    'last_name' => $member['last_name'],
+                    'fullname' => $fullname,
+                    'email' => $member['email'],
+                    'phone' => $member['phone'],
+                    'address' => $member['address']
+                ]
+            ]);
+        }
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Email not found in member records. Only registered members can create accounts.'
+        ]);
+    }
+    
+    $stmt->close();
+    exit;
+}
+
+// Member validation for registration
+if (isset($_POST['validate_member'])) {
+    require('db_connect.php');
+    
+    $member_id = trim($_POST['validate_member']);
+    
+    // Check if member exists and is not already registered
+    $stmt = $db->prepare("
+        SELECT m.member_id, m.first_name, m.last_name, m.middle_name, m.email, m.phone, m.address,
+               m.user_id, u.username 
+        FROM tbl_members m 
+        LEFT JOIN tbl_users u ON m.user_id = u.user_id 
+        WHERE m.member_id = ? AND m.status = 'active'
+    ");
+    $stmt->bind_param("s", $member_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $member = $result->fetch_assoc();
+        
+        // Check if member already has user account
+        if ($member['user_id'] && $member['username']) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'This member already has login credentials registered.'
+            ]);
+        } else {
+            echo json_encode([
+                'success' => true,
+                'member' => [
+                    'member_id' => $member['member_id'],
+                    'first_name' => $member['first_name'],
+                    'last_name' => $member['last_name'],
+                    'middle_name' => $member['middle_name'],
+                    'email' => $member['email'],
+                    'phone' => $member['phone'],
+                    'address' => $member['address']
+                ]
+            ]);
+        }
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Member ID not found or member is not active.'
+        ]);
+    }
+    
+    $stmt->close();
+    exit;
+}
+
+// Handle email-based registration
+if (isset($_POST['check-register'])) {
+    require('db_connect.php');
+    
+    $email = trim($_POST['email']);
+    $username = trim($_POST['username']);
+    
+    // Auto-generate secure password
+    function generateSecurePassword($length = 12) {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*()_+-=';
+        return substr(str_shuffle($chars), 0, $length);
+    }
+    
+    $auto_password = generateSecurePassword();
+    
+    // Validate email format again
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo "invalid_email";
+        exit;
+    }
+    
+    // First, check if email exists in tbl_members and get member info
+    $stmt = $db->prepare("
+        SELECT m.member_id, m.first_name, m.last_name, m.middle_name, m.email, m.phone, m.address,
+               m.user_id, u.username, m.cust_id 
+        FROM tbl_members m 
+        LEFT JOIN tbl_users u ON m.user_id = u.user_id 
+        WHERE m.email = ? AND m.status = 'active'
+    ");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        echo "member_not_found";
+        $stmt->close();
+        exit;
+    }
+    
+    $member = $result->fetch_assoc();
+    
+    // Check if member already has user account
+    if ($member['user_id'] && $member['username']) {
+        echo "member_already_registered";
+        $stmt->close();
+        exit;
+    }
+    
+    // Create fullname from member data
+    $fullname = trim($member['first_name'] . ' ' . $member['last_name']);
+    if (empty($fullname)) {
+        $fullname = "Member " . $member['member_id'];
+    }
+    
+    // Check if username already exists
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM tbl_users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    
+    if ($row['count'] > 0) {
+        echo "username_exists";
+        $stmt->close();
+        exit;
+    }
+    
+    // Start transaction
+    $db->begin_transaction();
+    
+    try {
+        // Hash password
+        $hashed_password = password_hash($auto_password, PASSWORD_DEFAULT);
+        $usertype = 4; // Member type
+        $created_at = date("Y-m-d H:i:s");
+        
+        // Insert into tbl_users with proper fullname
+        $stmt = $db->prepare("
+            INSERT INTO tbl_users (username, password, usertype, fullname, field_status, created_at) 
+            VALUES (?, ?, ?, ?, 1, ?)
+        ");
+        $stmt->bind_param("ssiss", $username, $hashed_password, $usertype, $fullname, $created_at);
+        $stmt->execute();
+        $user_id = $stmt->insert_id;
+        $stmt->close();
+        
+        // Update tbl_members with user_id
+        $stmt = $db->prepare("UPDATE tbl_members SET user_id = ? WHERE email = ?");
+        $stmt->bind_param("is", $user_id, $email);
+        $stmt->execute();
+        $stmt->close();
+        
+        // Create or update tbl_customer if needed
+        if (!$member['cust_id']) {
+            $stmt = $db->prepare("
+                INSERT INTO tbl_customer (name, address, contact, field_status, created_at) 
+                VALUES (?, ?, ?, 1, ?)
+            ");
+            $stmt->bind_param("ssss", $fullname, $member['address'], $member['phone'], $created_at);
+            $stmt->execute();
+            $cust_id = $stmt->insert_id;
+            $stmt->close();
+            
+            // Update member with cust_id
+            $stmt = $db->prepare("UPDATE tbl_members SET cust_id = ? WHERE email = ?");
+            $stmt->bind_param("is", $cust_id, $email);
+            $stmt->execute();
+            $stmt->close();
+        }
+        
+        // Get member details for account creation
+        $stmt = $db->prepare("SELECT member_id, type FROM tbl_members WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $member_result = $stmt->get_result();
+        $member_details = $member_result->fetch_assoc();
+        $member_id = $member_details['member_id'];
+        $member_type = $member_details['type'];
+        $stmt->close();
+        
+        // Create accounts based on member type
+        $created_accounts = [];
+        
+        // 1. Create Savings Account (for all members)
+        $stmt = $db->prepare("SELECT account_type_id FROM account_types WHERE type_name='savings' LIMIT 1");
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows === 0) throw new Exception("Account type 'Savings' missing");
+        $stmt->bind_result($savings_account_type_id);
+        $stmt->fetch();
+        $stmt->close();
+
+        $stmt = $db->prepare("INSERT INTO accounts (member_id, account_type_id, account_number) VALUES (?, ?, ?)");
+        $savings_account_number = 'SAV-' . str_pad($member_id, 6, '0', STR_PAD_LEFT);
+        $stmt->bind_param("iis", $member_id, $savings_account_type_id, $savings_account_number);
+        if (!$stmt->execute()) throw new Exception("Savings Account Insert Error: " . $stmt->error);
+        $savings_account_id = $stmt->insert_id;
+        $stmt->close();
+        $created_accounts['savings'] = $savings_account_id;
+
+        // 2. Create Loan Account (for all members)
+        $stmt = $db->prepare("SELECT account_type_id FROM account_types WHERE type_name='loan' LIMIT 1");
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows === 0) throw new Exception("Account type 'Loan' missing");
+        $stmt->bind_result($loan_account_type_id);
+        $stmt->fetch();
+        $stmt->close();
+
+        $stmt = $db->prepare("INSERT INTO accounts (member_id, account_type_id, account_number) VALUES (?, ?, ?)");
+        $loan_account_number = 'LOAN-' . str_pad($member_id, 6, '0', STR_PAD_LEFT);
+        $stmt->bind_param("iis", $member_id, $loan_account_type_id, $loan_account_number);
+        if (!$stmt->execute()) throw new Exception("Loan Account Insert Error: " . $stmt->error);
+        $loan_account_id = $stmt->insert_id;
+        $stmt->close();
+        $created_accounts['loan'] = $loan_account_id;
+
+        // 3. Create Capital Share Account (for regular members only)
+        if ($member_type === 'regular') {
+            $stmt = $db->prepare("SELECT account_type_id FROM account_types WHERE type_name='capital_share' LIMIT 1");
+            $stmt->execute();
+            $stmt->store_result();
+            if ($stmt->num_rows === 0) throw new Exception("Account type 'Capital Share' missing");
+            $stmt->bind_result($capital_share_account_type_id);
+            $stmt->fetch();
+            $stmt->close();
+
+            $stmt = $db->prepare("INSERT INTO accounts (member_id, account_type_id, account_number) VALUES (?, ?, ?)");
+            $capital_share_account_number = 'CS-' . str_pad($member_id, 6, '0', STR_PAD_LEFT);
+            $stmt->bind_param("iis", $member_id, $capital_share_account_type_id, $capital_share_account_number);
+            if (!$stmt->execute()) throw new Exception("Capital Share Account Insert Error: " . $stmt->error);
+            $capital_share_account_id = $stmt->insert_id;
+            $stmt->close();
+            $created_accounts['capital_share'] = $capital_share_account_id;
+        }
+        
+        // Log registration and account creation
+        $history_data = json_encode([
+            'user_id' => $user_id,
+            'email' => $email,
+            'action' => 'email_registration',
+            'member_id' => $member_id,
+            'accounts_created' => $created_accounts,
+            'member_type' => $member_type
+        ]);
+        
+        $stmt = $db->prepare("INSERT INTO tbl_history (date_history, details, history_type) VALUES (?, ?, ?)");
+        $history_type = 27; // Member registration
+        $stmt->bind_param("ssi", $created_at, $history_data, $history_type);
+        $stmt->execute();
+        $stmt->close();
+        
+        $db->commit();
+        
+        // Send password via email using existing function
+        $email_subject = 'Your OCC Cooperative Login Credentials';
+        $email_body = "
+            <h2>Welcome to OCC Cooperative!</h2>
+            <p>Dear <strong>{$fullname}</strong>,</p>
+            <p>Your account has been successfully created. Here are your login credentials:</p>
+            <div style='background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                <p><strong>Username:</strong> {$email}</p>
+                <p><strong>Password:</strong> <span style='color: #007bff; font-weight: bold;'>{$auto_password}</span></p>
+                <p><strong>Login URL:</strong> <a href='http://localhost/pos/'>http://localhost/pos/</a></p>
+            </div>
+            <p><strong>Important:</strong></p>
+            <ul>
+                <li>Please change your password after your first login for security purposes</li>
+                <li>Keep your credentials safe and do not share them with others</li>
+                <li>If you did not request this registration, please contact us immediately</li>
+            </ul>
+            <p>Best regards,<br>OCC Cooperative Team</p>
+        ";
+        
+        // Create a custom email function for registration
+        function sendRegistrationEmail($email, $fullname, $username, $password) {
+            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+            
+            try {
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'coop.cooperative.06@gmail.com';
+                $mail->Password   = 'ntdf xias qnkv xswr';
+                $mail->SMTPSecure = 'tls';
+                $mail->Port       = 587;
+                
+                $mail->setFrom('coop.cooperative.06@gmail.com', 'OCC Cooperative');
+                $mail->addAddress($email, $fullname);
+                
+                $mail->isHTML(true);
+                $mail->Subject = 'Your OCC Cooperative Login Credentials';
+                $mail->Body = "
+                    <h2>Welcome to OCC Cooperative!</h2>
+                    <p>Dear <strong>{$fullname}</strong>,</p>
+                    <p>Your account has been successfully created. Here are your login credentials:</p>
+                    <div style='background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                        <p><strong>Username:</strong> {$username}</p>
+                        <p><strong>Password:</strong> <span style='color: #007bff; font-weight: bold;'>{$password}</span></p>
+                        <p><strong>Login URL:</strong> <a href='http://localhost/pos/'>http://localhost/pos/</a></p>
+                    </div>
+                    <p><strong>Important:</strong></p>
+                    <ul>
+                        <li>Please change your password after your first login for security purposes</li>
+                        <li>Keep your credentials safe and do not share them with others</li>
+                        <li>If you did not request this registration, please contact us immediately</li>
+                    </ul>
+                    <p>Best regards,<br>OCC Cooperative Team</p>
+                ";
+                $mail->AltBody = "
+                    Welcome to OCC Cooperative!
+                    
+                    Your account has been successfully created. Here are your login credentials:
+                    
+                    Username: {$username}
+                    Password: {$password}
+                    Login URL: http://localhost/pos/
+                    
+                    Important:
+                    - Please change your password after your first login for security purposes
+                    - Keep your credentials safe and do not share them with others
+                    - If you did not request this registration, please contact us immediately
+                    
+                    Best regards,
+                    OCC Cooperative Team
+                ";
+                
+                $mail->send();
+                return true;
+                
+            } catch (Exception $e) {
+                error_log("Email sending failed: " . $mail->ErrorInfo);
+                return false;
+            }
+        }
+        
+        // Send the email
+        $email_sent = sendRegistrationEmail($email, $fullname, $email, $auto_password);
+        
+        if ($email_sent) {
+            echo "success";
+        } else {
+            // Email failed but registration succeeded
+            echo "success"; // Still return success, email failure is logged
+        }
+        
+    } catch (Exception $e) {
+        $db->rollback();
+        echo "error: " . $e->getMessage();
+    }
+    
+    exit;
+}
+
 
 if (isset($_POST['save-product'])) {
     require('db_connect.php');
@@ -83,10 +508,7 @@ if (isset($_POST['save-product'])) {
     save_product($data);
 }
 
-// if (isset($_POST['save-category'])) {
-//     $data = array('category_name' => $_POST['category_name']);
-//     save_category($data);
-// }
+
 
 if (isset($_POST['save-menu'])) {
     require('db_connect.php');
@@ -285,9 +707,6 @@ function save_member($data)
 
     $full_name = $data['first_name'] . ' ' . $data['last_name'];
 
-
-
-
     $db->begin_transaction();
 
     try {
@@ -299,10 +718,7 @@ function save_member($data)
         $stmt->close();
 
         // Insert into tbl_users
-
         $plain_password = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'), 0, 8);
-
-
         $hashed_password = password_hash($plain_password, PASSWORD_DEFAULT);
         $usertype = 4;
 
@@ -336,62 +752,110 @@ function save_member($data)
         $member_id = $stmt->insert_id;
         $stmt->close();
 
-        // Ensure account type exists
-        $stmt = $db->prepare("SELECT account_type_id FROM account_types WHERE type_name='capital_share' LIMIT 1");
+        // Create accounts based on member type
+        $created_accounts = [];
+        
+        // 1. Create Savings Account (for all members)
+        $stmt = $db->prepare("SELECT account_type_id FROM account_types WHERE type_name='savings' LIMIT 1");
         $stmt->execute();
         $stmt->store_result();
-        if ($stmt->num_rows === 0) throw new Exception("Account type 'Capital Share' missing");
-        $stmt->bind_result($account_type_id);
+        if ($stmt->num_rows === 0) throw new Exception("Account type 'Savings' missing");
+        $stmt->bind_result($savings_account_type_id);
         $stmt->fetch();
         $stmt->close();
 
-        // Insert account
         $stmt = $db->prepare("INSERT INTO accounts (member_id, account_type_id, account_number) VALUES (?, ?, ?)");
-        $account_number = 'CS-' . str_pad($member_id, 6, '0', STR_PAD_LEFT);
-        $stmt->bind_param("iis", $member_id, $account_type_id, $account_number);
-        if (!$stmt->execute()) throw new Exception("Account Insert Error: " . $stmt->error);
-        $account_id = $stmt->insert_id;
+        $savings_account_number = 'SAV-' . str_pad($member_id, 6, '0', STR_PAD_LEFT);
+        $stmt->bind_param("iis", $member_id, $savings_account_type_id, $savings_account_number);
+        if (!$stmt->execute()) throw new Exception("Savings Account Insert Error: " . $stmt->error);
+        $savings_account_id = $stmt->insert_id;
+        $stmt->close();
+        $created_accounts['savings'] = $savings_account_id;
+
+        // 2. Create Loan Account (for all members)
+        $stmt = $db->prepare("SELECT account_type_id FROM account_types WHERE type_name='loan' LIMIT 1");
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows === 0) throw new Exception("Account type 'Loan' missing");
+        $stmt->bind_result($loan_account_type_id);
+        $stmt->fetch();
         $stmt->close();
 
-        // Insert initial capital share transaction if regular member
-        if ($data['member_type'] === 'regular' && $data['capital_share'] > 0) {
-            // Ensure transaction type exists
-            $stmt = $db->prepare("SELECT transaction_type_id FROM transaction_types WHERE type_name='capital_share' LIMIT 1");
+        $stmt = $db->prepare("INSERT INTO accounts (member_id, account_type_id, account_number) VALUES (?, ?, ?)");
+        $loan_account_number = 'LOAN-' . str_pad($member_id, 6, '0', STR_PAD_LEFT);
+        $stmt->bind_param("iis", $member_id, $loan_account_type_id, $loan_account_number);
+        if (!$stmt->execute()) throw new Exception("Loan Account Insert Error: " . $stmt->error);
+        $loan_account_id = $stmt->insert_id;
+        $stmt->close();
+        $created_accounts['loan'] = $loan_account_id;
+
+        // 3. Create Capital Share Account (for regular members only)
+        if ($data['member_type'] === 'regular') {
+            $stmt = $db->prepare("SELECT account_type_id FROM account_types WHERE type_name='capital_share' LIMIT 1");
             $stmt->execute();
             $stmt->store_result();
-            if ($stmt->num_rows === 0) throw new Exception("Transaction type 'Capital Share' missing");
-            $stmt->bind_result($transaction_type_id);
+            if ($stmt->num_rows === 0) throw new Exception("Account type 'Capital Share' missing");
+            $stmt->bind_result($capital_share_account_type_id);
             $stmt->fetch();
             $stmt->close();
 
-
-
-
-            $reference_no = 'CS-' . str_pad($account_id, 6, '0', STR_PAD_LEFT);
-
-            $stmt = $db->prepare(
-                "INSERT INTO transactions 
-    (account_id, transaction_type_id, amount, transaction_date, reference_no, remarks) 
-    VALUES (?, ?, ?, NOW(), ?, ?)"
-            );
-
-            $remarks = 'Initial Capital Share';
-
-            $stmt->bind_param(
-                "iidss",
-                $account_id,
-                $transaction_type_id,
-                $data['capital_share'],
-                $reference_no,
-                $remarks
-            );
-
-            if (!$stmt->execute()) {
-                throw new Exception("Capital Share Transaction Insert Error: " . $stmt->error);
-            }
-
+            $stmt = $db->prepare("INSERT INTO accounts (member_id, account_type_id, account_number) VALUES (?, ?, ?)");
+            $capital_share_account_number = 'CS-' . str_pad($member_id, 6, '0', STR_PAD_LEFT);
+            $stmt->bind_param("iis", $member_id, $capital_share_account_type_id, $capital_share_account_number);
+            if (!$stmt->execute()) throw new Exception("Capital Share Account Insert Error: " . $stmt->error);
+            $capital_share_account_id = $stmt->insert_id;
             $stmt->close();
+            $created_accounts['capital_share'] = $capital_share_account_id;
+
+            // Insert initial capital share transaction if provided
+            if ($data['capital_share'] > 0) {
+                $stmt = $db->prepare("SELECT transaction_type_id FROM transaction_types WHERE type_name='capital_share' LIMIT 1");
+                $stmt->execute();
+                $stmt->store_result();
+                if ($stmt->num_rows === 0) throw new Exception("Transaction type 'Capital Share' missing");
+                $stmt->bind_result($transaction_type_id);
+                $stmt->fetch();
+                $stmt->close();
+
+                $reference_no = 'CS-' . str_pad($capital_share_account_id, 6, '0', STR_PAD_LEFT);
+
+                $stmt = $db->prepare(
+                    "INSERT INTO transactions 
+        (account_id, transaction_type_id, amount, transaction_date, reference_no, remarks) 
+        VALUES (?, ?, ?, NOW(), ?, ?)"
+                );
+
+                $remarks = 'Initial Capital Share';
+                $stmt->bind_param(
+                    "iidss",
+                    $capital_share_account_id,
+                    $transaction_type_id,
+                    $data['capital_share'],
+                    $reference_no,
+                    $remarks
+                );
+
+                if (!$stmt->execute()) {
+                    throw new Exception("Capital Share Transaction Insert Error: " . $stmt->error);
+                }
+                $stmt->close();
+            }
         }
+
+        // Log account creation
+        $history_data = json_encode([
+            'member_id' => $member_id,
+            'user_id' => $user_id,
+            'accounts_created' => $created_accounts,
+            'member_type' => $data['member_type']
+        ]);
+        
+        $stmt = $db->prepare("INSERT INTO tbl_history (date_history, details, history_type) VALUES (?, ?, ?)");
+        $history_type = 28; // Account creation
+        $created_at = date("Y-m-d H:i:s");
+        $stmt->bind_param("ssi", $created_at, $history_data, $history_type);
+        $stmt->execute();
+        $stmt->close();
 
         $db->commit();
 

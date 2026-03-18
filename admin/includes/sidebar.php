@@ -49,11 +49,12 @@
                         <li><a href="damage-report.php"><i class="icon-dots"></i> Damage</a></li>
                     </ul>
                 </li>
+                 <li><a href="pdf_dashboard.php"><i class="icon-dots"></i> SOA PDF</a></li>
                 <li><a href="system-history.php"><i class="icon-dots"></i> System History</a></li>
-                <li><a href="pdf_dashboard.php"><i class="icon-dots"></i> PDF Management</a></li>
-                <li><a href="system_settings.php"><i class="icon-cog"></i> System Settings</a></li>
+                  <li><a href="export_data.php"><i class="icon-dots"></i> Export Data</a></li>
             </ul>
         </li>
+           <li><a href="system_settings.php"><i class="icon-cog"></i> System Settings</a></li>
 
     <?php } ?>
 

@@ -149,7 +149,7 @@ while ($row = $scheduleQry->fetch_assoc()) {
     }
 
     .receipt-div hr {
-        border: 1px solid #009688;
+        border: 1px solid #0479d8;
         margin: 10px 0 20px;
     }
 
@@ -173,7 +173,7 @@ while ($row = $scheduleQry->fetch_assoc()) {
 
     .table-loan th,
     .amortization-table th {
-        background-color: #009688;
+        background-color: #0479d8;
         color: #070505;
         font-weight: bold;
     }
@@ -197,7 +197,7 @@ while ($row = $scheduleQry->fetch_assoc()) {
 
     /* Section titles */
     h5 {
-        color: #00796b;
+        color: #0262b0;
         margin-bottom: 10px;
     }
 

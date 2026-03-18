@@ -7,7 +7,7 @@ body{
 		color: #ff0000;
 		font-size: 80px;
 	}
-	.top-row3-link i:hover{
+.top-row3-link i:hover{
 		opacity: 0.8;
 	}
 .modal-body{
@@ -86,7 +86,7 @@ body{
     padding-top: 15px;
 }
 .cart-row{
-	background: #fff;
+	background: #f0f8ff;
 	
 }
 
@@ -296,7 +296,7 @@ body{
     min-height: 300px;
     max-height: 300px;
     overflow-y:scroll;
-    background-color: #F5F5F5;
+    background-color: #e3f2fd;
     width: 100%;
     z-index: 10;
     padding: 0px !important;
@@ -319,7 +319,7 @@ body{
 }
 .ul-search{
     list-style-type: none;
-    background: #F5F5F5;
+    background: #e3f2fd;
     color: #333;
     margin-left: -25px;
 }
@@ -515,11 +515,11 @@ input::-webkit-inner-spin-button {
 	height: 90px;
     display: flex;
 	align-items: center;
-	background: #0579ee;
+	background: #64b5f6;
 }
 
 .top-content .logo {
-	background: #484646;
+	background: #b3d9f2;
     height: 100%;
     padding: 4px;
 }
@@ -550,7 +550,7 @@ input::-webkit-inner-spin-button {
 
 .top-content .left-action {
 	padding: 4px;
-	background: #0279f1;
+	background: #047fe3;
 	height: 100%;
 
 }
@@ -571,7 +571,7 @@ input::-webkit-inner-spin-button {
 }
 
 .main-content .main-right .cart-footer{
-	background:#5f5f5f;
+	background:#e3f2fd;
 	height: 90px;
 	color: #fff;
 }
@@ -580,7 +580,7 @@ input::-webkit-inner-spin-button {
 	width: 350px;
     display: flex;
 	flex-direction: column;
-	background: #484646;
+	background: #484646	;
 	height: calc(100vh - 90px);
 }
 

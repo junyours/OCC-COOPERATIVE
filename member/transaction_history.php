@@ -395,58 +395,54 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- CAPITAL SHARE TAB -->
-                                                <div class="tab-pane" id="capital">
-                                                    <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                 <!-- CAPITAL SHARE TAB -->
+                                        <div class="tab-pane" id="capital">
+                                            <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <i class="icon-piggy-bank position-left text-teal-400"></i>
+                                                        Capital Share
+                                                        <small style="margin-left:10px; color:#777;">
+                                                            (<?= date('M d, Y', strtotime($date_from)) ?> to <?= date('M d, Y', strtotime($date_to)) ?>)
+                                                        </small>
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <table class="table table-bordered table-hover">
+                                                        <thead>
+                                                            <tr style="background:#eee">
+                                                                <th>Reference</th>
+                                                                <th>Date</th>
+                                                                <th class="text-right">Credit</th>
+                                                                <th class="text-right">Debit</th>
+                                                                <th class="text-right">Balance</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            $hasContrib = false;
+                                                            $running_balance = 0;
 
-                                                        <div class="panel-heading">
-                                                            <h6 class="panel-title">
-                                                                <i class="icon-piggy-bank position-left text-teal-400"></i>
-                                                                Capital Share
-                                                                <small style="margin-left:10px; color:#777;">
-                                                                    (<?= date('M d, Y', strtotime($date_from)) ?> to <?= date('M d, Y', strtotime($date_to)) ?>)
-                                                                </small>
-                                                            </h6>
-                                                        </div>
+                                                            while ($c = $contributions->fetch_assoc()) {
+                                                                $hasContrib = true;
 
-                                                        <div class="panel-body">
+                                                                $reference_no = htmlspecialchars($c['reference_no']);
+                                                                $date = date('M d, Y', strtotime($c['contribution_date']));
 
-                                                            <table class="table table-bordered table-hover">
+                                                                $credit = 0;
+                                                                $debit = 0;
 
-                                                                <thead>
-                                                                    <tr style="background:#eee">
-                                                                        <th>Reference</th>
-                                                                        <th>Date</th>
-                                                                        <th class="text-right">Credit</th>
-                                                                        <th class="text-right">Debit</th>
-                                                                        <th class="text-right">Balance</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <?php
-                                                                    $hasContrib = false;
-                                                                    $running_balance = 0;
+                                                                if (in_array($c['transaction_type'], ['deposit', 'capital_share'])) {
+                                                                    // It's a deposit type → add to balance
+                                                                    $credit = $c['amount'];
+                                                                    $running_balance += $credit;
+                                                                } elseif ($c['transaction_type'] === 'withdrawal') {
+                                                                    // It's a withdrawal → subtract from balance
+                                                                    $debit = $c['amount'];
+                                                                    $running_balance -= $debit;
+                                                                }
 
-                                                                    while ($c = $contributions->fetch_assoc()) {
-                                                                        $hasContrib = true;
-
-                                                                        $reference_no = htmlspecialchars($c['reference_no']);
-                                                                        $date = date('M d, Y', strtotime($c['contribution_date']));
-
-                                                                        $credit = 0;
-                                                                        $debit = 0;
-
-                                                                        if (in_array($c['transaction_type'], ['deposit', 'capital_share'])) {
-
-                                                                            $credit = $c['amount'];
-                                                                            $running_balance += $credit;
-                                                                        } elseif ($c['transaction_type'] === 'withdrawal') {
-
-                                                                            $debit = $c['amount'];
-                                                                            $running_balance -= $debit;
-                                                                        }
-
-                                                                        echo "
+                                                                echo "
                         <tr>
                             <td>
                                 <a href='javascript:void(0);'
@@ -461,47 +457,50 @@
                             <td class='text-right'>" . ($debit ? "₱" . number_format($debit, 2) : '') . "</td>
                             <td class='text-right'>₱" . number_format($running_balance, 2) . "</td>
                         </tr>";
-                                                                    }
+                                                            }
 
-                                                                    if (!$hasContrib) {
-                                                                        echo "
+                                                            if (!$hasContrib) {
+                                                                echo "
                         <tr>
                             <td colspan='5' class='text-center'>No contributions found for this period.</td>
                         </tr>";
-                                                                    }
-                                                                    ?>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
+                                                            }
+                                                            ?>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
+                                            </div>
+                                        </div>
 
 
-                                                <div class="tab-pane" id="savings">
-                                                    <div class="panel panel-white border-top-xlg border-top-teal-400">
-                                                        <div class="panel-heading">
-                                                            <h6 class="panel-title">
-                                                                <i class="icon-wallet position-left text-teal-400"></i> Savings (<?= $year; ?>)
-                                                            </h6>
-                                                        </div>
-                                                        <div class="panel-body">
-                                                            <table class="table table-bordered table-hover">
-                                                                <thead>
-                                                                    <tr style="background:#eee">
-                                                                        <th>Reference</th>
-                                                                        <th>Date</th>
-                                                                        <th class="text-right text-success">Credit</th>
-                                                                        <th class="text-right text-danger">Debit</th>
-                                                                        <th class="text-right">Balance</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <?php
-                                                                    $balance = 0;
-                                                                    $transactions = [];
+                                        <div class="tab-pane" id="savings">
+                                            <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <i class="icon-wallet position-left text-teal-400"></i> Savings
+                                                        <small style="margin-left:10px; color:#777;">
+                                                            (<?= date('M d, Y', strtotime($date_from)) ?> to <?= date('M d, Y', strtotime($date_to)) ?>)
+                                                        </small>
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <table class="table table-bordered table-hover">
+                                                        <thead>
+                                                            <tr style="background:#eee">
+                                                                <th>Reference</th>
+                                                                <th>Date</th>
+                                                                <th class="text-right text-success">Credit</th>
+                                                                <th class="text-right text-danger">Debit</th>
+                                                                <th class="text-right">Balance</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            $balance = 0;
+                                                            $transactions = [];
 
-                                                                    // Fetch all savings transactions (oldest first for correct balance)
-                                                                    $savings_result = $db->query("
+                                                            // Fetch all savings transactions (oldest first for correct balance)
+                                                            $savings_result = $db->query("
                         SELECT 
                             t.transaction_date,
                             t.amount,
@@ -518,31 +517,31 @@
                             ON tt.transaction_type_id = t.transaction_type_id
                         WHERE a.member_id = $member_id
                           AND at.type_name = 'savings'
-                          AND YEAR(t.transaction_date) = $year
+                          AND DATE(t.transaction_date) BETWEEN '$date_from' AND '$date_to'
                         ORDER BY t.created_at ASC, t.transaction_id ASC
                     ");
 
-                                                                    if ($savings_result->num_rows > 0) {
-                                                                        // Calculate running balance first
-                                                                        while ($s = $savings_result->fetch_assoc()) {
-                                                                            $amount = floatval($s['amount']); // negative for withdrawal
-                                                                            $balance += $amount;
+                                                            if ($savings_result->num_rows > 0) {
+                                                                // Calculate running balance first
+                                                                while ($s = $savings_result->fetch_assoc()) {
+                                                                    $amount = floatval($s['amount']); // negative for withdrawal
+                                                                    $balance += $amount;
 
-                                                                            $transactions[] = [
-                                                                                'reference' => htmlspecialchars($s['reference_no']),
-                                                                                'date'      => date('M d, Y', strtotime($s['transaction_date'])),
-                                                                                'credit'    => $amount > 0 ? number_format($amount, 2) : '',
-                                                                                'debit'     => $amount < 0 ? number_format(abs($amount), 2) : '',
-                                                                                'balance'   => number_format($balance, 2),
-                                                                            ];
-                                                                        }
+                                                                    $transactions[] = [
+                                                                        'reference' => htmlspecialchars($s['reference_no']),
+                                                                        'date'      => date('M d, Y', strtotime($s['transaction_date'])),
+                                                                        'credit'    => $amount > 0 ? number_format($amount, 2) : '',
+                                                                        'debit'     => $amount < 0 ? number_format(abs($amount), 2) : '',
+                                                                        'balance'   => number_format($balance, 2),
+                                                                    ];
+                                                                }
 
-                                                                        // Reverse to show latest first
-                                                                        $transactions = array_reverse($transactions);
+                                                                // Reverse to show latest first
+                                                                $transactions = array_reverse($transactions);
 
-                                                                        // Display
-                                                                        foreach ($transactions as $t) {
-                                                                            echo "
+                                                                // Display
+                                                                foreach ($transactions as $t) {
+                                                                    echo "
                             <tr>
                                 <td>
                                     <a href='javascript:void(0);'
@@ -556,125 +555,163 @@
                                 <td class='text-right'>₱{$t['balance']}</td>
                             </tr>
                             ";
-                                                                        }
-                                                                    } else {
-                                                                        echo "
+                                                                }
+                                                            } else {
+                                                                echo "
                         <tr>
-                            <td colspan='5' class='text-center'>No savings found for {$year}.</td>
+                            <td colspan='5' class='text-center'>No savings found for this period.</td>
                         </tr>
                         ";
-                                                                    }
-                                                                    ?>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
+                                                            }
+                                                            ?>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
+                                            </div>
+                                        </div>
 
-                                                <div class="tab-pane" id="loan">
-                                                    <div class="panel panel-white border-top-xlg border-top-teal-400">
-                                                        <div class="panel-heading">
-                                                            <h6 class="panel-title">
-                                                                <i class="icon-coins position-left text-teal-400"></i> Loan History (<?= $year; ?>)
-                                                            </h6>
-                                                        </div>
-                                                        <div class="panel-body">
-                                                            <table class="table table-bordered table-hover">
-                                                                <thead>
-                                                                    <tr style="background:#eee">
-                                                                        <th>Reference</th>
-                                                                        <th>Loan Type</th>
-                                                                        <th>Date Paid</th>
-                                                                        <th class="text-right">Principal</th>
-                                                                        <th class="text-right">Interest</th>
-                                                                        <th class="text-right">Penalty</th>
-                                                                        <th class="text-right">Total Paid</th>
-                                                                        <th class="text-right">Remaining Balance</th>
-                                                                        <th>Status</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <?php
+                                        <div class="tab-pane" id="loan">
+                                            <div class="panel panel-white border-top-xlg border-top-teal-400">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <i class="icon-coins position-left text-teal-400"></i> Loan History
+                                                        <small style="margin-left:10px; color:#777;">
+                                                            (<?= date('M d, Y', strtotime($date_from)) ?> to <?= date('M d, Y', strtotime($date_to)) ?>)
+                                                        </small>
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <table class="table table-bordered table-hover">
+                                                        <thead>
+                                                            <tr style="background:#eee">
+                                                                <th>Reference</th>
+                                                                <th>Loan Type</th>
+                                                                <th>Date Paid</th>
+                                                                <th class="text-right">Principal</th>
+                                                                <th class="text-right">Interest</th>
+                                                                <th class="text-right">Penalty</th>
+                                                                <th class="text-right">Total Paid</th>
+                                                                <th class="text-right">Remaining Balance</th>
+                                                                <th>Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
 
-                                                                    $loan_result = $db->query("
-                                                                     SELECT l.loan_id, l.total_due, l.status, lt.loan_type_name
-                                                                    FROM loans l
-                                                                    JOIN loan_types lt ON l.loan_type_id = lt.loan_type_id
-                                                                    JOIN accounts a ON l.account_id = a.account_id
-                                                                    WHERE a.member_id = $member_id
-                                                                    ORDER BY l.loan_id DESC
-                                                                     ");
+                                                            // Fetch loans INCLUDING total_due with date filtering
+                                                            $loan_result = $db->query("
+SELECT l.loan_id, l.total_due, l.status, lt.loan_type_name
+FROM loans l
+JOIN loan_types lt ON l.loan_type_id = lt.loan_type_id
+JOIN accounts a ON l.account_id = a.account_id
+WHERE a.member_id = $member_id
+AND EXISTS (
+    SELECT 1 FROM loan_payments lp 
+    WHERE lp.loan_id = l.loan_id 
+    AND DATE(lp.payment_date) BETWEEN '$date_from' AND '$date_to'
+)
+ORDER BY l.loan_id DESC
+");
 
-                                                                    if ($loan_result->num_rows > 0) {
+                                                            if ($loan_result->num_rows > 0) {
 
-                                                                        while ($loan = $loan_result->fetch_assoc()) {
+                                                                while ($loan = $loan_result->fetch_assoc()) {
 
-                                                                            $loan_id = $loan['loan_id'];
-                                                                            $loan_type_name = htmlspecialchars($loan['loan_type_name']);
-                                                                            $loan_status = ucfirst($loan['status']);
-                                                                            $balance = floatval($loan['total_due']);
-                                                                            $payments = $db->query("
-                                                                               SELECT *
-                                                                               FROM loan_payments
-                                                                               WHERE loan_id = $loan_id
-                                                                               ORDER BY payment_date ASC, payment_id ASC
-                                                                               ");
-                                                                            if ($payments->num_rows > 0) {
-                                                                                while ($p = $payments->fetch_assoc()) {
-                                                                                    $reference = htmlspecialchars($p['reference_no']);
+                                                                    $loan_id = $loan['loan_id'];
+                                                                    $loan_type_name = htmlspecialchars($loan['loan_type_name']);
+                                                                    $loan_status = ucfirst($loan['status']);
 
-                                                                                    $date_paid = date('M d, Y', strtotime($p['payment_date']));
+                                                                    // START balance from TOTAL LOAN DUE (correct)
+                                                                    $balance = floatval($loan['total_due']);
 
-                                                                                    $principal_paid = floatval($p['principal_paid']);
-                                                                                    $interest_paid = floatval($p['interest_paid']);
-                                                                                    $penalty_paid = floatval($p['penalty_paid']);
 
-                                                                                    $total_paid = floatval($p['amount_paid']);
-                                                                                    $balance -= $total_paid;
-                                                                                    echo "<tr>
-                                                                                       <td>
-                                                                                      <a href='javascript:void(0);'
-                                                                                         onclick='view_loanpayments_receipt(this)'
-                                                                                         data-reference='{$reference}'
-                                                                                          style='font-weight:600; color:#26a69a;'>
-                                                                                        {$reference}
-                                                                                          </a>
-                                                                                          </td>
-                                                                                          <td>{$loan_type_name}</td> 
-                                                                                         <td>{$date_paid}</td>
-                                                                                         <td class='text-right'>₱" . number_format($principal_paid, 2) . "</td>
-                                                                                         <td class='text-right'>₱" . number_format($interest_paid, 2) . "</td>
-                                                                                         <td class='text-right'>₱" . number_format($penalty_paid, 2) . "</td>
-                                                                                         <td class='text-right'>₱" . number_format($total_paid, 2) . "</td>
-                                                                                         <td class='text-right'><b>₱" . number_format($balance, 2) . "</b></td>
-                                                                                            <td>{$loan_status}</td>
-                                                                                            </tr>";
-                                                                                }
-                                                                            } else {
-                                                                                echo "
-                                                                                   <tr>
-                                                                                <td colspan='9' class='text-center'>
-                                                                                  No payments made yet
-                                                                                  </td>
-                                                                                     </tr>
-                                                                                       ";
-                                                                            }
+                                                                    // Fetch payments with date filtering
+                                                                    $payments = $db->query("
+        SELECT *
+        FROM loan_payments
+        WHERE loan_id = $loan_id
+        AND DATE(payment_date) BETWEEN '$date_from' AND '$date_to'
+        ORDER BY created_at ASC, payment_id ASC
+        ");
+
+
+                                                                    if ($payments->num_rows > 0) {
+
+                                                                        while ($p = $payments->fetch_assoc()) {
+
+                                                                            $reference = htmlspecialchars($p['reference_no']);
+
+                                                                            $date_paid = date('M d, Y', strtotime($p['payment_date']));
+
+                                                                            $principal_paid = floatval($p['principal_paid']);
+                                                                            $interest_paid = floatval($p['interest_paid']);
+                                                                            $penalty_paid = floatval($p['penalty_paid']);
+
+                                                                            $total_paid = floatval($p['amount_paid']);
+
+
+                                                                            // SUBTRACT payment from TOTAL DUE
+                                                                            $balance -= $total_paid;
+
+
+                                                                            echo "<tr>
+
+                <td>
+                <a href='javascript:void(0);'
+                onclick='view_loanpayments_receipt(this)'
+                data-reference='{$reference}'
+                style='font-weight:600; color:#26a69a;'>
+                {$reference}
+                </a>
+                </td>
+
+                <td>{$loan_type_name}</td>
+
+                <td>{$date_paid}</td>
+
+                <td class='text-right'>₱" . number_format($principal_paid, 2) . "</td>
+
+                <td class='text-right'>₱" . number_format($interest_paid, 2) . "</td>
+
+                <td class='text-right'>₱" . number_format($penalty_paid, 2) . "</td>
+
+                <td class='text-right'>₱" . number_format($total_paid, 2) . "</td>
+
+                <td class='text-right'><b>₱" . number_format($balance, 2) . "</b></td>
+
+                <td>{$loan_status}</td>
+
+                </tr>";
                                                                         }
                                                                     } else {
-                                                                        echo "
-                                                                            <tr>
-                                                                           <td colspan='9' class='text-center'>
-                                                                            No loans found
-                                                                           </td>
-                                                                              </tr>";
-                                                                    }
-                                                                    ?>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                </div>
 
+                                                                        echo "
+            <tr>
+            <td colspan='9' class='text-center'>
+            No payments made yet
+            </td>
+            </tr>
+            ";
+                                                                    }
+                                                                }
+                                                            } else {
+
+                                                                echo "
+<tr>
+<td colspan='9' class='text-center'>
+No loans found
+</td>
+</tr>
+";
+                                                            }
+
+                                                            ?>
+
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
                                                 <div class="tab-pane" id="cash">
                                                     <div class="panel panel-white border-top-xlg border-top-teal-400">
                                                         <div class="panel-heading">
@@ -818,13 +855,27 @@
 
                             <?php require('../admin/includes/footer-text.php'); ?>
 
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </div>
 
-            <?php require('../admin/includes/footer.php'); ?>
+        </div>
+    </div>
+</div>
+</div>
+
+<div id="modal-all" class="modal fade" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="title-all"></h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="show-data-all"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php require('../admin/includes/footer.php'); ?>
             <script src="../js/html2canvas.min.js"></script>
             <script src="../js/jspdf.umd.min.js"></script>
 

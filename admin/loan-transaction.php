@@ -36,20 +36,17 @@ if (
 
 <body class="layout-boxed navbar-top">
 
-    <div class="navbar navbar-inverse bg-teal-400 navbar-fixed-top">
-        <div class="navbar-header">
-
-            <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
-            <ul class="nav navbar-nav visible-xs-block">
-                <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
-            </ul>
-
-        </div>
-
-        <div class="navbar-collapse collapse" id="navbar-mobile">
-            <?php require('includes/sidebar.php'); ?>
-        </div>
-    </div>
+    <div class="navbar navbar-inverse bg-primary navbar-fixed-top">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="index.php"><img src="../images/main_logo.jpg" alt=""><span>OPOL COMMUNITY COLLEGE <br>EMPLOYEES CREDIT COOPERATIVE</span></a>
+                    <ul class="nav navbar-nav visible-xs-block">
+                        <li><a data-toggle="collapse" data-target="#navbar-mobile"><i class="icon-tree5"></i></a></li>
+                    </ul>
+                </div>
+                <div class="navbar-collapse collapse" id="navbar-mobile">
+                    <?php require('includes/sidebar.php'); ?>
+                </div>
+            </div>
 
 
     <div class="page-container">

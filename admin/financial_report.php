@@ -260,7 +260,7 @@ function getCumulativeSavingsBalance($db, $start_date, $end_date) {
     
     return $data;
 }
-
+    
 
 
 // Execute all queries and get data
@@ -432,47 +432,31 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 ?>
 
 <style>
-    .financial-metric {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+        font-weight: 800;
         color: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        text-decoration: none;
+        font-size: 16px;
+        line-height: 1.2;
     }
-    
-    .metric-value {
-        font-size: 2.5em;
-        font-weight: bold;
-        margin: 10px 0;
+
+    .navbar-brand img {
+        height: 40px;
+        width: auto;
+        margin-right: 12px;
+        border-radius: 20px;
     }
-    
-    .metric-label {
-        font-size: 0.9em;
-        opacity: 0.9;
-    }   
-    
-    .profit-positive {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-    }
-    
-    .profit-negative {
-        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+
+    .navbar-brand span {
+        white-space: nowrap;
     }
     
     .panel {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         margin-bottom: 20px;
-        overflow: hidden;
-    }
-    
-    .panel-heading {
-        background: #f8f9fa;
-        padding: 15px 20px;
-        border-bottom: 1px solid #dee2e6;
-        font-weight: 600;
     }
     
     .panel-body {
@@ -486,41 +470,57 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     .date-filter {
         background: white;
         padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         margin-bottom: 20px;
     }
     
-    .chart-container {
-        height: 300px;
-        margin: 20px 0;
+    .breadcrumb-elements {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
     }
     
-    .progress-bar {
-        height: 8px;
-        background: #e9ecef;
-        border-radius: 4px;
-        overflow: hidden;
-        margin: 5px 0;
+    .breadcrumb-elements li {
+        margin-right: 5px;
+        margin-bottom: 5px;
     }
     
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        transition: width 0.3s ease;
+    .btn-rounded {
+        border-radius: 3px;
+    }
+    
+    .panel-white {
+        background: white;
+        border: 1px solid #ddd;
+    }
+    
+    .border-top-xlg {
+        border-top-width: 4px !important;
+    }
+    
+    .border-top-teal-400 {
+        border-top-color: #26a69a !important;
+    }
+    
+    .text-teal-400 {
+        color: #26a69a !important;
     }
     
     .calculation-box {
         background: #f8f9fa;
-        border-left: 4px solid #667eea;
+        border-left: 4px solid #26a69a;
         padding: 15px;
         margin: 10px 0;
-        border-radius: 0 5px 5px 0;
+        border-radius: 0 4px 4px 0;
     }
     
     .calculation-title {
         font-weight: bold;
-        color: #667eea;
+        color: #26a69a;
         margin-bottom: 8px;
     }
     
@@ -543,12 +543,26 @@ $customer_analysis_result = $db->query($customer_analysis_query);
         font-size: 0.9em;
     }
     
+    .insight-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 4px 4px 0;
+    }
+    
+    .insight-title {
+        font-weight: bold;
+        color: #1976d2;
+        margin-bottom: 8px;
+    }
+    
     .ratio-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
         padding: 15px;
         margin: 10px 0;
-        border: 1px solid #dee2e6;
+        border: 1px solid #ddd;
     }
     
     .ratio-value {
@@ -569,39 +583,9 @@ $customer_analysis_result = $db->query($customer_analysis_query);
         margin-top: 5px;
     }
     
-    .insight-box {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        border-left: 4px solid #2196f3;
-        padding: 15px;
-        margin: 15px 0;
-        border-radius: 0 5px 5px 0;
-    }
-    
-    .insight-title {
-        font-weight: bold;
-        color: #1976d2;
-        margin-bottom: 8px;
-    }
-    
-    .navbar-brand {
-        display: flex;
-        align-items: center;
-        font-weight: 800;
-        color: white;
-        text-decoration: none;
-        font-size: 16px;
-        line-height: 1.2;
-    }
-
-    .navbar-brand img {
-        height: 40px;
-        width: auto;
-        margin-right: 12px;
-        border-radius: 20px;
-    }
-
-    .navbar-brand span {
-        white-space: nowrap;
+    .chart-container {
+        height: 300px;
+        margin: 20px 0;
     }
 </style>
 
@@ -638,94 +622,123 @@ $customer_analysis_result = $db->query($customer_analysis_query);
             
             <div class="content">
 
-<!-- Database Status Notification -->
-<!-- <?php if (!$cooperative_tables_exist): ?>
-<div class="alert alert-warning" style="margin-bottom: 20px;">
-    <h4><i class="fa fa-exclamation-triangle"></i> Cooperative Tables Not Found</h4>
-    <p>The cooperative-specific tables (accounts, transactions) are not currently in your database. The report shows business operations only.</p>
-    <p><strong>Expected table structure:</strong></p>
-    <ul>
-        <li><code>accounts</code> - Member accounts (savings, loans, capital shares)</li>
-        <li><code>account_types</code> - Account type definitions</li>
-        <li><code>transactions</code> - All financial transactions</li>
-        <li><code>transaction_types</code> - Transaction type definitions</li>
-    </ul>
-    <p><strong>Transaction types needed:</strong> deposit, withdrawal, capital_share, loan_release, loan_payment, cancelled_loan</p>
-</div>
-<?php else: ?>
-<div class="alert alert-success" style="margin-bottom: 20px;">
-    <h4><i class="fa fa-check-circle"></i> Full Cooperative Mode Active</h4>
-    <p>All cooperative financial components are available including capital shares, loans, and savings through the accounts and transactions system.</p>
-</div>
-<?php endif; ?> -->
 
 
 
+<!-- Summary Cards -->
 <div class="row">
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric">
-            <div class="metric-label">Total Revenue</div>
-            <div class="metric-value">₱<?php echo number_format($total_cooperative_revenue, 2); ?></div>
-            <div class="metric-label">Business + Interest Income</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body bg-success-400 has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-cart-add icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format($total_cooperative_revenue, 2); ?></h3>
+                    <span class="text-uppercase text-size-mini">Total Revenue</span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric">
-            <div class="metric-label">Total Expenses</div>
-            <div class="metric-value">₱<?php echo number_format($total_cooperative_expenses, 2); ?></div>
-            <div class="metric-label">Operations + Disbursements</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body bg-blue-400 has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-credit-card icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format($total_cooperative_expenses, 2); ?></h3>
+                    <span class="text-uppercase text-size-mini">Total Expenses</span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric <?php echo $cooperative_profit_loss >= 0 ? 'profit-positive' : 'profit-negative'; ?>">
-            <div class="metric-label"><?php echo $cooperative_profit_loss >= 0 ? 'Net Profit' : 'Net Loss'; ?></div>
-            <div class="metric-value">₱<?php echo number_format(abs($cooperative_profit_loss), 2); ?></div>
-            <div class="metric-label">Cooperative Operations</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body <?php echo $cooperative_profit_loss >= 0 ? 'bg-teal-400' : 'bg-danger-400'; ?> has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-calculator icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format(abs($cooperative_profit_loss), 2); ?></h3>
+                    <span class="text-uppercase text-size-mini"><?php echo $cooperative_profit_loss >= 0 ? 'Net Profit' : 'Net Loss'; ?></span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric">
-            <div class="metric-label">Net Assets</div>
-            <div class="metric-value">₱<?php echo number_format($net_assets, 2); ?></div>
-            <div class="metric-label">Total Financial Position</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body bg-indigo-400 has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-piggy-bank icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format($net_assets, 2); ?></h3>
+                    <span class="text-uppercase text-size-mini">Net Assets</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
      
 <!-- Cooperative-Specific Metrics -->
 <div class="row">
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <div class="metric-label">Total Capital Shares</div>
-            <div class="metric-value">₱<?php echo number_format($total_capital_data['total_capital_all'] ?? 0, 2); ?></div>
-            <div class="metric-label"><?php echo $total_capital_data['total_members_all'] ?? 0; ?> members</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body bg-pink-400 has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-users icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format($total_capital_data['total_capital_all'] ?? 0, 2); ?></h3>
+                    <span class="text-uppercase text-size-mini">Capital Shares</span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <div class="metric-label">Savings Deposits</div>
-            <div class="metric-value">₱<?php echo number_format($current_balances_data['total_current_balance'] ?? 0, 2); ?></div>
-            <div class="metric-label"><?php echo $current_balances_data['active_accounts'] ?? 0; ?> active accounts</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body bg-cyan-400 has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-piggy-bank icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format($current_balances_data['total_current_balance'] ?? 0, 2); ?></h3>
+                    <span class="text-uppercase text-size-mini">Savings</span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-            <div class="metric-label">Loan Portfolio</div>
-            <div class="metric-value">₱<?php echo number_format($loan_portfolio_data['total_approved_loans'] ?? 0, 2); ?></div>
-            <div class="metric-label"><?php echo $loan_portfolio_data['approved_count'] ?? 0; ?> active loans</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body bg-green-400 has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-handshake-o icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format($loan_portfolio_data['total_approved_loans'] ?? 0, 2); ?></h3>
+                    <span class="text-uppercase text-size-mini">Loan Portfolio</span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="col-lg-3 col-md-6">
-        <div class="financial-metric" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <div class="metric-label">Interest Income</div>
-            <div class="metric-value">₱<?php echo number_format($loan_repayments_data['total_interest'] ?? 0, 2); ?></div>
-            <div class="metric-label">Loan Operations</div>
+    <div class="col-sm-6 col-md-3">
+        <div class="panel panel-body bg-orange-400 has-bg-image">
+            <div class="media no-margin">
+                <div class="media-left media-middle">
+                    <i class="icon-coins icon-3x opacity-75"></i>
+                </div>
+                <div class="media-body text-right">
+                    <h3 class="no-margin">₱<?php echo number_format($loan_repayments_data['total_interest'] ?? 0, 2); ?></h3>
+                    <span class="text-uppercase text-size-mini">Interest Income</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -733,35 +746,42 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 
 
 <!-- Date Filter -->
-<div class="date-filter">
-    <form method="GET" class="form-inline">
-        <div class="form-group mr-3">
-            <label for="start_date">Start Date:</label>
-            <input type="date" id="start_date" name="start_date" class="form-control ml-2" value="<?php echo $start_date; ?>">
-        </div>
-        <div class="form-group mr-3">
-            <label for="end_date">End Date:</label>
-            <input type="date" id="end_date" name="end_date" class="form-control ml-2" value="<?php echo $end_date; ?>">
-        </div>
-        <button type="submit" class="btn btn-primary">
-            <i class="fa fa-filter"></i> Filter Report
-        </button>
-        <button type="button" class="btn btn-secondary ml-2" onclick="clearFilter()">
-            <i class="fa fa-times"></i> Clear Filter
-        </button>
-        <a href="generate_financial_pdf.php?start_date=<?php echo $start_date; ?>&end_date=<?php echo $end_date; ?>" class="btn btn-danger ml-2" target="_blank">
-            <i class="fa fa-file-pdf-o"></i> Export PDF
-        </a>
-        <a href="generate_financial_excel.php?start_date=<?php echo $start_date; ?>&end_date=<?php echo $end_date; ?>" class="btn btn-success ml-2">
-            <i class="fa fa-file-excel-o"></i> Export Excel
-        </a>
-    </form>
+<div class="panel panel-body ">
+    <div>
+        <form class="heading-form" method="GET">
+            <ul class="breadcrumb-elements" style="float:left">
+                <li style="padding-top: 2px;padding-right: 2px">
+                    <div class="input-group">
+                        <span class="input-group-addon" style="padding: 5px 12px;">
+                            <i class="icon-calendar"></i>
+                        </span>
+                        <input style="width: 180px" type="date" name="start_date" class="form-control" value="<?php echo $start_date; ?>">
+                    </div>
+                </li>
+                <li style="padding-top: 2px;padding-right: 2px">
+                    <div class="input-group">
+                        <span class="input-group-addon" style="padding: 5px 12px;">
+                            <i class="icon-calendar"></i>
+                        </span>
+                        <input style="width: 180px" type="date" name="end_date" class="form-control" value="<?php echo $end_date; ?>">
+                    </div>
+                </li>
+                <li data-toggle="tooltip" title="Filter Report" style="padding-top: 2px;padding-right: 2px"><button type="submit" class="btn bg-teal-400"><b><i class="icon-search4"></i></b></button></li>
+                <li data-toggle="tooltip" title="Clear Filter" style="padding-top: 2px;padding-right: 2px"><button type="button" onclick="clearFilter()" class="btn bg-slate-400"><b><i class="icon-filter4"></i></b></button></li>
+                <li data-toggle="tooltip" title="Export PDF" style="padding-top: 2px;padding-right: 2px"><button type="button" onClick="window.location.href='generate_financial_pdf.php?start_date=<?php echo $start_date; ?>&end_date=<?php echo $end_date; ?>'" class="btn bg-danger-700"><b><i class="icon-file-pdf"></i></b></button></li>
+                <li data-toggle="tooltip" title="Balance Sheet PDF" style="padding-top: 2px;padding-right: 2px"><button type="button" onClick="window.location.href='generate_balance_sheet_pdf.php?start_date=<?php echo $start_date; ?>&end_date=<?php echo $end_date; ?>'" class="btn bg-orange-700"><b><i class="icon-file-pdf"></i></b></button></li>
+                <li data-toggle="tooltip" title="Export Excel" style="padding-top: 2px;padding-right: 2px"><button type="button" onClick="window.location.href='generate_financial_excel.php?start_date=<?php echo $start_date; ?>&end_date=<?php echo $end_date; ?>'" class="btn bg-success-700"><b><i class="icon-file-excel"></i></b></button></li>
+            </ul>
+        </form>
+    </div>
 </div>
 
 <!-- Financial Summary Calculation Details -->
-<div class="panel">
+<div class="panel panel-white border-top-xlg border-top-teal-400">
     <div class="panel-heading">
-        <h4><i class="fa fa-calculator"></i> Financial Summary Calculations</h4>
+        <h6 class="panel-title"><i class="icon-calculator text-teal-400"></i> Financial Summary Calculations<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+        <div class="heading-elements">
+        </div>
     </div>
     <div class="panel-body">
         <div class="row">
@@ -824,17 +844,15 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 </div>
 
 
-
-
-
-
 <!-- Cooperative Financial Panels -->
 <div class="row">
     <!-- Capital Shares & Members -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-users"></i> Capital Shares & Members</h4>
+                <h6 class="panel-title"><i class="icon-users text-teal-400"></i> Capital Shares & Members<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <table class="table table-striped">
@@ -877,9 +895,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     
     <!-- Loan Portfolio Summary -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-handshake-o"></i> Loan Portfolio Summary</h4>
+                <h6 class="panel-title"><i class="icon-handshake-o text-teal-400"></i> Loan Portfolio Summary<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <table class="table table-striped">
@@ -925,9 +945,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 <div class="row">
     <!-- Savings/Deposits -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-piggy-bank"></i> Savings & Deposits</h4>
+                <h6 class="panel-title"><i class="icon-piggy-bank text-teal-400"></i> Savings & Deposits<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <table class="table table-striped">
@@ -976,9 +998,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     
     <!-- Cash & Fund Management -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-money"></i> Cash & Fund Management</h4>
+                <h6 class="panel-title"><i class="icon-money text-teal-400"></i> Cash & Fund Management<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <table class="table table-striped">
@@ -1029,9 +1053,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 <div class="row">
     <!-- Revenue Breakdown -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-money"></i> Revenue Breakdown</h4>
+                <h6 class="panel-title"><i class="icon-money text-teal-400"></i> Revenue Breakdown<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <table class="table table-striped">
@@ -1078,9 +1104,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     
     <!-- Expense Breakdown -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-credit-card"></i> Expense Breakdown</h4>
+                <h6 class="panel-title"><i class="icon-credit-card text-teal-400"></i> Expense Breakdown<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <table class="table table-striped">
@@ -1126,9 +1154,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 <div class="row">
     <!-- Top Selling Products -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-star"></i> Top Selling Products</h4>
+                <h6 class="panel-title"><i class="icon-star text-teal-400"></i> Top Selling Products<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <div class="table-responsive">
@@ -1172,9 +1202,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     
     <!-- Top Customers -->
     <div class="col-lg-6">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-users"></i> Top Customers</h4>
+                <h6 class="panel-title"><i class="icon-users text-teal-400"></i> Top Customers<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <div class="table-responsive">
@@ -1215,9 +1247,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 <div class="row">
     <!-- Monthly Sales Trend -->
     <div class="col-lg-8">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-line-chart"></i> Monthly Sales Trend</h4>
+                <h6 class="panel-title"><i class="icon-line-chart text-teal-400"></i> Monthly Sales Trend<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <div class="chart-container">
@@ -1258,9 +1292,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
     
     <!-- Expense Categories -->
     <div class="col-lg-4">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-pie-chart"></i> Expense Categories</h4>
+                <h6 class="panel-title"><i class="icon-pie-chart text-teal-400"></i> Expense Categories<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <div class="chart-container">
@@ -1297,9 +1333,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 </div>
 
 <!-- Financial Insights & Analysis -->
-<div class="panel">
+<div class="panel panel-white border-top-xlg border-top-teal-400">
     <div class="panel-heading">
-        <h4><i class="fa fa-lightbulb-o"></i> Financial Insights & Analysis</h4>
+        <h6 class="panel-title"><i class="icon-lightbulb-o text-teal-400"></i> Financial Insights & Analysis<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+        <div class="heading-elements">
+        </div>
     </div>
     <div class="panel-body">
         <div class="row">
@@ -1383,9 +1421,11 @@ $customer_analysis_result = $db->query($customer_analysis_query);
 <!-- Financial Ratios -->
 <div class="row">
     <div class="col-lg-12">
-        <div class="panel">
+        <div class="panel panel-white border-top-xlg border-top-teal-400">
             <div class="panel-heading">
-                <h4><i class="fa fa-calculator"></i> Financial Ratios & KPIs</h4>
+                <h6 class="panel-title"><i class="icon-calculator text-teal-400"></i> Financial Ratios & KPIs<a class="heading-elements-toggle"><i class="icon-more"></i></a></h6>
+                <div class="heading-elements">
+                </div>
             </div>
             <div class="panel-body">
                 <?php 
@@ -1493,8 +1533,8 @@ function clearFilter() {
     const endDate = today.toISOString().split('T')[0];
     
     // Set input values
-    document.getElementById('start_date').value = startDate;
-    document.getElementById('end_date').value = endDate;
+    document.querySelector('input[name="start_date"]').value = startDate;
+    document.querySelector('input[name="end_date"]').value = endDate;
     
     // Submit form to refresh with default dates
     window.location.href = 'financial_report.php?start_date=' + startDate + '&end_date=' + endDate;

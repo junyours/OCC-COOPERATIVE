@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 require('../admin/includes/header.php');
 
 if (!isset($_SESSION['is_login_yes'], $_SESSION['user_id']) || $_SESSION['is_login_yes'] != 'yes') {
-    die("Unauthorized access. Please log in again.");
+    die("Unauthorized access.");
 }
 
 $user_id = (int) $_SESSION['user_id'];
