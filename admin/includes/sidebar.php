@@ -75,11 +75,12 @@
         <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                 <i class="icon-chart position-left"></i> Reports <span class="caret"></span>
-            </a>
+            </a>    
             <ul class="dropdown-menu dropdown-menu-right">
                 <li><a href="loan-report.php"><i class="icon-dots"></i> Loan</a></li>
                 <li><a href="daily_sales.php"><i class="icon-dots"></i> Daily Collection</a></li>
                 <li><a href="sales-report.php"><i class="icon-dots"></i> Sales</a></li>
+                 <li><a href="financial_report.php"><i class="icon-dots"></i> Fincancial Reports</a></li>   
             </ul>
         </li>
 

@@ -50,14 +50,14 @@ $date_add = date('Y-m-d', strtotime('+1 day', $start));
 
 $query = "
 SELECT 
-    ANY_VALUE(tbl_sales.sales_id) AS sales_id,
+    MIN(tbl_sales.sales_id) AS sales_id,
     tbl_sales.sales_no,
-    ANY_VALUE(tbl_sales.sales_type) AS sales_type,
-    ANY_VALUE(tbl_sales.total_amount) AS total_amount,
-    ANY_VALUE(tbl_users.fullname) AS fullname,
-    ANY_VALUE(tbl_customer.name) AS customer_name,
-    ANY_VALUE(tbl_customer.address) AS customer_address,
-    ANY_VALUE(tbl_customer.contact) AS customer_contact
+    MIN(tbl_sales.sales_type) AS sales_type,
+    MIN(tbl_sales.total_amount) AS total_amount,
+    MIN(tbl_users.fullname) AS fullname,
+    MIN(tbl_customer.name) AS customer_name,
+    MIN(tbl_customer.address) AS customer_address,
+    MIN(tbl_customer.contact) AS customer_contact
 FROM tbl_sales
 INNER JOIN tbl_users ON tbl_sales.user_id = tbl_users.user_id
 LEFT JOIN tbl_customer ON tbl_sales.cust_id = tbl_customer.cust_id
@@ -67,6 +67,25 @@ WHERE sales_date BETWEEN '$today' AND '$date_add'
 GROUP BY tbl_sales.sales_no
 ORDER BY tbl_sales.sales_no DESC
 ";
+// $query = "
+// SELECT 
+//     ANY_VALUE(tbl_sales.sales_id) AS sales_id,
+//     tbl_sales.sales_no,
+//     ANY_VALUE(tbl_sales.sales_type) AS sales_type,
+//     ANY_VALUE(tbl_sales.total_amount) AS total_amount,
+//     ANY_VALUE(tbl_users.fullname) AS fullname,
+//     ANY_VALUE(tbl_customer.name) AS customer_name,
+//     ANY_VALUE(tbl_customer.address) AS customer_address,
+//     ANY_VALUE(tbl_customer.contact) AS customer_contact
+// FROM tbl_sales
+// INNER JOIN tbl_users ON tbl_sales.user_id = tbl_users.user_id
+// LEFT JOIN tbl_customer ON tbl_sales.cust_id = tbl_customer.cust_id
+// WHERE sales_date BETWEEN '$today' AND '$date_add'
+//   AND tbl_sales.user_id = '{$_SESSION['user_id']}'
+//   AND sales_status != 3
+// GROUP BY tbl_sales.sales_no
+// ORDER BY tbl_sales.sales_no DESC
+// ";
 
 $result = $db->query($query);
 
