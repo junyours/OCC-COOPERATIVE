@@ -46,7 +46,7 @@ if (!isset($_SESSION['is_login_yes']) || $_SESSION['is_login_yes'] != 'yes') {
 	<link rel="icon" type="image/png" sizes="16x16" href="../images/main_logo.jpg">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
 	
-	<title>OCCECC</title>
+	<title>OCCECCO</title>
 
 	<!-- Global stylesheets -->
 	<!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,100,500,700,900" rel="stylesheet" type="text/css"> -->

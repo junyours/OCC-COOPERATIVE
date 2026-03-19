@@ -1,6 +1,6 @@
 <?php
 error_reporting(0);
-require('../db_connect.php');
+require('db_connect.php');
 
 if (!isset($_GET['reference_no'])) {
     die("Invalid reference.");

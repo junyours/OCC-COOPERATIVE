@@ -124,7 +124,7 @@ function save_product($data)
 
 function update_customer($data)
 {
-    require('db_connect.php'); // $db must be a mysqli connection
+    require('db_connect.php'); 
 
     $cust_id = mysqli_real_escape_string($db, $data['cust_id']);
     $name = mysqli_real_escape_string($db, $data['name']);
